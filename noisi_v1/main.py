@@ -4,8 +4,8 @@
 # import time
 import argparse
 
-from noisi.scripts.source_grid import setup_sourcegrid as setup_sgrid
-from noisi.util.setup_new import setup_proj, setup_source
+from noisi_v1.scripts.source_grid import setup_sourcegrid as setup_sgrid
+from noisi_v1.util.setup_new import setup_proj, setup_source
 # from noisi.scripts.run_correlation import run_corr
 # from noisi.scripts.run_measurement import run_measurement
 # from noisi.scripts.run_adjointsrcs import run_adjointsrcs
