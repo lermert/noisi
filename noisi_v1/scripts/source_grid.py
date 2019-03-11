@@ -3,7 +3,7 @@ import json
 import os
 import io
 from obspy.geodetics import gps2dist_azimuth
-from noisi.util.geo import len_deg_lat, len_deg_lon
+from noisi_v1.util.geo import len_deg_lat, len_deg_lon
 from warnings import warn
     
 

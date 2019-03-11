@@ -2,7 +2,7 @@ import os
 import io
 import time
 import json
-from noisi import _ROOT
+from noisi_v1 import _ROOT
 
 def setup_proj(args):
 

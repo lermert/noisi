@@ -28,11 +28,9 @@ setup(
         "pandas",
         "instaseis",
         "h5py"],
-    # ToDo: Use entry points in the future to handle two completely different approaches to the noise modeling: with delta-correlated sources or finite-correlation-length correlated sources
-    # ToDo: Add entry points for test suite
     entry_points = {
         'console_scripts': [
-            'noisi_v1 = noisi.main:run'            
+            'noisi_v1 = noisi_v1.main:run'            
         ]
     },
 )
