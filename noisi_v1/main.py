@@ -64,7 +64,8 @@ parser_correlation.add_argument('source_model', type=str, help='Path to source\
  model.')
 parser_correlation.add_argument('step', type=int, help='Iteration step (start\
  at 0.')
-parser_correlation.add_defaults('steplengthrun'=False, ignore_network=True)
+parser_correlation.add_argument('steplengthrun', default=False, required=False)
+parser_correlation.add_argument('ignore_network', default=True, required=False)
 parser_correlation.set_defaults(func=run_corr)
 
 def run():
