@@ -6,7 +6,7 @@ import os
 from pandas import read_csv
 import numpy as np
 import json
-from noisi.util.geo import geograph_to_geocent
+from noisi_v1.util.geo import geograph_to_geocent
 from obspy.geodetics import gps2dist_azimuth
 
 comm = MPI.COMM_WORLD
