@@ -9,7 +9,7 @@ def setup_proj(args):
     project_name = args.project_name
     os.makedirs(os.path.join(project_name))
 
-    with io.open(os.path.join(os.path.getcwd(), 'config', 'config.json'), 'r+') as fh:
+    with io.open(os.path.join(os.getcwd(), 'config', 'config.json'), 'r+') as fh:
         conf = json.loads(fh.read())
 
     conf['date_created'] = time.strftime("%Y.%m.%d")
@@ -39,7 +39,7 @@ def setup_source(args):
     for d in ['adjt', 'grad', 'corr', 'kern']:
         os.mkdir(os.path.join(source_model, 'step_0', d))
 
-    with io.open(os.path.join(os.path.getcwd(),
+    with io.open(os.path.join(os.getcwd(),
                  'config', 'source_config.json'),'r') as fh:
         conf = json.loads(fh.read())
         conf['date_created'] = str(time.strftime("%Y.%m.%d"))
@@ -52,7 +52,7 @@ def setup_source(args):
         cf = json.dumps(conf, sort_keys=True, indent=4, separators=(",", ": "))
         fh.write(cf)
 
-    with io.open(os.path.join(os.path.getcwd(),
+    with io.open(os.path.join(os.getcwd(),
                  'config', 'measr_config.json'), 'r') as fh:
         conf = json.loads(fh.read())
         conf['date_created'] = str(time.strftime("%Y.%m.%d"))
@@ -61,9 +61,9 @@ def setup_source(args):
         cf = json.dumps(conf, sort_keys=True, indent=4, separators=(",", ": "))
         fh.write(cf)
 
-    os.system('cp {} {}'.format(os.path.join(os.path.getcwd(),
+    os.system('cp {} {}'.format(os.path.join(os.getcwd(),
               'util/setup_noisesource.py'), source_model))
-    os.system('cp {} {}'.format(os.path.join(os.path.getcwd(),
+    os.system('cp {} {}'.format(os.path.join(os.getcwd(),
               'util/wavefield_from_instaseis.py'), source_model))
     print("Copied default source_config.json and measr_config.json \
 to source model directory, please edit. \
