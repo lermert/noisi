@@ -22,7 +22,8 @@ path_to_db = config['wavefield_path']
 channel = source_config['channel']
 
 # read sourcegrid
-f_sources = np.load(os.path.join(os.path.dirname(os.getcwd), 'sourcegrid.npy'))
+f_sources = np.load(os.path.join(os.path.dirname(os.getcwd()),
+                                 'sourcegrid.npy'))
 ntraces = f_sources.shape[-1]
 
 # open the database
@@ -38,7 +39,8 @@ ntimesteps = stest.stats.npts
 
 
 # read station from file
-stationlist = read_csv(os.path.join(os.path.dirname(os.getcwd), 'stationlist.csv'))
+stationlist = read_csv(os.path.join(os.path.dirname(os.getcwd()),
+                                    'stationlist.csv'))
 net = stationlist.at[rank, 'net']
 sta = stationlist.at[rank, 'sta']
 lat = stationlist.at[rank, 'lat']
@@ -90,7 +92,7 @@ else:
 # jump to the beginning of the trace in the binary file
 for i in range(startindex, ntraces):
     if i % 1000 == 1:
-        print('Converted %g of %g traces' % (ntraces))
+        print('Converted %g of %g traces' % (i, ntraces))
 
     lat_src = geograph_to_geocent(f_sources[1, i])
     lon_src = f_sources[0, i]
