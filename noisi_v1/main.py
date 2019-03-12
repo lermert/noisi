@@ -6,7 +6,7 @@ import argparse
 
 from noisi_v1.scripts.source_grid import setup_sourcegrid as setup_sgrid
 from noisi_v1.util.setup_new import setup_proj, setup_source
-from noisi.scripts.run_correlation import run_corr
+from noisi_v1.scripts.run_correlation import run_corr
 # from noisi.scripts.run_measurement import run_measurement
 # from noisi.scripts.run_adjointsrcs import run_adjointsrcs
 # from noisi.scripts.run_kernel import run_kern
@@ -64,8 +64,10 @@ parser_correlation.add_argument('source_model', type=str, help='Path to source\
  model.')
 parser_correlation.add_argument('step', type=int, help='Iteration step (start\
  at 0.')
-parser_correlation.add_argument('steplengthrun', default=False, required=False)
-parser_correlation.add_argument('ignore_network', default=True, required=False)
+parser_correlation.add_argument('--steplengthrun',
+                                default=False, required=False)
+parser_correlation.add_argument('--ignore_network',
+                                default=True, required=False)
 parser_correlation.set_defaults(func=run_corr)
 
 def run():
