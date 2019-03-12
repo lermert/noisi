@@ -9,7 +9,7 @@ def setup_proj(args):
     project_name = args.project_name
     os.makedirs(os.path.join(project_name))
 
-    noisi_path = os.path.abspath(inspect.getfile(inspect.currentframe()))
+    noisi_path = os.path.abspath(inspect.getfile(inspect.stack()[-1]))
     print(noisi_path)
     with io.open(os.path.join(os.getcwd(), 'config', 'config.json'), 'r+') as fh:
         conf = json.loads(fh.read())
