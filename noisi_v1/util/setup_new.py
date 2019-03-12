@@ -2,13 +2,15 @@ import os
 import io
 import time
 import json
-
+import inspect
 
 def setup_proj(args):
 
     project_name = args.project_name
     os.makedirs(os.path.join(project_name))
 
+    noisi_path = os.path.abspath(inspect.getfile(inspect.currentframe()))
+    print(noisi_path)
     with io.open(os.path.join(os.getcwd(), 'config', 'config.json'), 'r+') as fh:
         conf = json.loads(fh.read())
 
