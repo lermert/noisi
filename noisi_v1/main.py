@@ -6,7 +6,7 @@ import argparse
 
 from noisi_v1.scripts.source_grid import setup_sourcegrid as setup_sgrid
 from noisi_v1.util.setup_new import setup_proj, setup_source
-# from noisi.scripts.run_correlation import run_corr
+from noisi.scripts.run_correlation import run_corr
 # from noisi.scripts.run_measurement import run_measurement
 # from noisi.scripts.run_adjointsrcs import run_adjointsrcs
 # from noisi.scripts.run_kernel import run_kern
@@ -54,6 +54,19 @@ parser_setup_source.add_argument('source_model', type=str, help='Name for the\
 parser_setup_source.set_defaults(func=setup_source)
 
 
+# ###########################################################################
+# Correlations
+# ###########################################################################
+
+parser_correlation = subparsers.add_parser('correlation',
+                                            help='Calculate correlations.')
+parser_correlation.add_argument('source_model', type=str, help='Path to source\
+ model.')
+parser_correlation.add_argument('step', type=int, help='Iteration step (start\
+ at 0.')
+parser_correlation.add_defaults('steplengthrun'=False, ignore_network=True)
+parser_correlation.set_defaults(func=run_corr)
+
 def run():
     """
     Main routine for noise correlation modeling and noise source inversion.
@@ -81,16 +94,6 @@ def run():
 #         run_preprocessing(source_config)
 
 
-# ###########################################################################
-# ### Correlations <3
-# ###########################################################################
-# @run.command(help='Calculate correlations for selected source model.')
-# @click.argument('source_model')
-# @click.argument('step')
-# def correlation(source_model,step):
-#     source_model = os.path.join(source_model,'source_config.json')
-#     run_corr(source_model,step)
-    
 
 # ###########################################################################
 # ### Measure and get adjoint sources
