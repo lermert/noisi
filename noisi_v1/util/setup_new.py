@@ -30,6 +30,7 @@ setup_sourcegrid.".format(project_name))
 def setup_source(args):
     source_model = args.source_model
     project_path = os.path.dirname(source_model)
+    noisi_path = os.path.dirname(inspect.stack()[1][1])
 
     if os.path.exists(source_model):
         raise ValueError("Directory exists already.")
