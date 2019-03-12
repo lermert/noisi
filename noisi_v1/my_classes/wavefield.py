@@ -19,7 +19,6 @@ except ImportError:
 #from scipy.signal.signaltools import _next_regular
 from obspy.signal.invsim import cosine_taper
 from obspy.signal.filter import integer_decimation
-import click
 from warnings import warn
 
 #ToDo: Think about having a frequency domain field as well, maybe with keyword 'fd'    
@@ -166,16 +165,13 @@ class WaveField(object):
             # Call self.file newfile
             newfile = self#.file
         
-        with click.progressbar(range(self.stats['ntraces']),label='Filtering..' ) as ind:
-            for i in ind:
-                # Filter each trace
-                if zerophase:
-                    firstpass = sosfilt(sos, self.data[i,:]) # Read in any case from self.data
-                    newfile.data[i,:] = sosfilt(sos,firstpass[::-1])[::-1] # then assign to newfile, which might be self.file
-                else:
-                    newfile.data[i,:] = sosfilt(sos,self.data[i,:])
-                # flush?
-                
+        for i in range(self.stats['ntraces']):
+            # Filter each trace
+            if zerophase:
+                firstpass = sosfilt(sos, self.data[i,:]) # Read in any case from self.data
+                newfile.data[i,:] = sosfilt(sos,firstpass[::-1])[::-1] # then assign to newfile, which might be self.file
+            else:
+                newfile.data[i,:] = sosfilt(sos,self.data[i,:])
         if not overwrite:
            print('Processed traces written to file %s, file closed, \
                   reopen to read / modify.' %newfile.file.filename)
