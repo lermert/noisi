@@ -18,6 +18,7 @@ from noisi_v1.scripts.run_correlation import run_corr
 def hello(args):
     print('Noisi Version 1. Type noisi_v1 -h for more information.\n')
 
+
 parser = argparse.ArgumentParser(description='Noise cross-correlation tool.')
 parser.set_defaults(func=hello)
 subparsers = parser.add_subparsers()
@@ -26,7 +27,7 @@ subparsers = parser.add_subparsers()
 # Setting up a new project
 ###########################################################################
 parser_setup_project = subparsers.add_parser('setup_project',
-                                              help='Initialize a new project.')
+                                             help='Initialize a new project.')
 parser_setup_project.add_argument('project_name', type=str, help='Project name. Noisi will\
  create a new directory under this name. The directory must not exist yet.')
 parser_setup_project.set_defaults(func=setup_proj)
@@ -38,7 +39,8 @@ parser_setup_project.set_defaults(func=setup_proj)
 parser_setup_sourcegrid = subparsers.add_parser('setup_sourcegrid',
                                                 help='Set up the discretized\
  source grid.')
-parser_setup_sourcegrid.add_argument('project_path', type=str, help='path to project directory')
+parser_setup_sourcegrid.add_argument('project_path', type=str,
+                                     help='path to project directory')
 parser_setup_sourcegrid.set_defaults(func=setup_sgrid)
 
 # #############################################################################

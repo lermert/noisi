@@ -1,5 +1,5 @@
 import numpy as np
-import json
+import yaml
 import os
 import io
 from obspy.geodetics import gps2dist_azimuth
@@ -7,16 +7,12 @@ from noisi_v1.util.geo import len_deg_lat, len_deg_lon
 from warnings import warn
 
 
-def points_on_sphere(dx, xmin=-180., xmax=180., ymin=-89.999, ymax=89.999,
-                     c_centr=None, radius=None):
+def points_on_ell(dx, xmin=-180., xmax=180., ymin=-89.999, ymax=89.999):
     """
-    Calculate a more or less equally spaced grid on spherical Earth's surface.
+    Calculate an approximately equally spaced grid on an
+    elliptical Earth's surface.
+    :type dx: float
     :param dx: spacing in latitudinal and longitudinal direction in meter
-    :type c_centr: Tuple
-    :param c_centr: Specify a central location
-    :type radius: float
-    :param radius: Radius around central location in m
-     no sources beyond this will be included
     :returns: np.array(latitude, longitude) of grid points,
     where -180<=lon<180     and -90 <= lat < 90
     """
@@ -32,72 +28,52 @@ def points_on_sphere(dx, xmin=-180., xmax=180., ymin=-89.999, ymax=89.999,
     if ymin == -90.:
         ymin = -89.999
         warn("Resetting lat_min to -89.999 degree")
-
+    if ymax == 90.:
+        ymax = 89.999
+        warn("Resetting lat_max to 89.999 degree")
+        # do not start or end at pole because 1 deg of longitude is 0 m there
     while lat <= ymax:
-        d_lat = dx / len_deg_lat(lat)
+        
         d_lon = dx / len_deg_lon(lat)
+        # the starting point of each longitudinal circle is randomized
         lon = xmin + np.random.rand(1)[0] * d_lon
 
         while lon <= xmax:
             gridx.append(lon)
             gridy.append(lat)
-
-            if c_centr and radius:
-                if gps2dist_azimuth(lat, lon, c_centr[0],
-                                    c_centr[1])[0] > radius:
-                    print(lat, lon, gps2dist_azimuth(lat, lon,
-                                                     c_centr[0],c_centr[1])[0])
-                    if abs(lat) != 90.:
-                        d_lon = dx / len_deg_lon(lat)
-                        lon += d_lon
-                        continue
-                    else:
-                        break
-
-            if abs(lat) == 90:
-                # length of a degree longitude will be 0.
-                break
-            else:
-                d_lon = dx / len_deg_lon(lat)
-                lon += d_lon
-        lat += d_lat  # do not start at pole or zero division will raise...
+            d_lon = dx / len_deg_lon(lat)
+            lon += d_lon
+        d_lat = dx / len_deg_lat(lat)
+        lat += d_lat
 
     return list((gridx, gridy))
 
 
 def create_sourcegrid(config):
 
-    cfile = open(config, 'r')
-    config = json.load(cfile)
-    cfile.close()
-    # ToDo: Pretty printing of all dictionaries such as this one.
     print(config)
-
-     # ToDo read extra parameters into configuration
-    grid = points_on_sphere(config['grid_dx'],
-                            xmin=config['grid_lon_min'],
-                            xmax=config['grid_lon_max'],
-                            ymin=config['grid_lat_min'],
-                            ymax=config['grid_lat_max'],
-                            c_centr=config['grid_coord_centr'],
-                            radius=config['grid_radius'])
-
+    grid = points_on_ell(config['grid_dx'],
+                         xmin=config['grid_lon_min'],
+                         xmax=config['grid_lon_max'],
+                         ymin=config['grid_lat_min'],
+                         ymax=config['grid_lat_max'])
     sources = np.zeros((2, len(grid[0])))
     sources[0:2, :] = grid
 
-    print('Number of gridpoints:', np.size(grid) / 2)
+    print('Number of gridpoints: ', np.size(grid) / 2)
 
     return sources
 
 
 def setup_sourcegrid(args):
-    configfile = os.path.join(args.project_path, 'config.json')
-    sourcegrid = create_sourcegrid(configfile)
-
+    configfile = os.path.join(args.project_path, 'config.yml')
     with io.open(configfile, 'r') as fh:
-        config = json.load(fh)
+        config = yaml.safe_load(fh)
 
     grid_filename = os.path.join(config['project_path'], 'sourcegrid.npy')
+    sourcegrid = create_sourcegrid(config)
 
     # write to .npy
     np.save(grid_filename, sourcegrid)
+
+    return()

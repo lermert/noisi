@@ -1,8 +1,9 @@
 import os
 import io
 import time
-import json
+import yaml
 import inspect
+
 
 def setup_proj(args):
 
@@ -12,18 +13,23 @@ def setup_proj(args):
     noisi_path = os.path.dirname(inspect.stack()[1][1])
 
     with io.open(os.path.join(noisi_path,
-                              'config', 'config.json'), 'r+') as fh:
-        conf = json.loads(fh.read())
+                              'config', 'config.yml'), 'r+') as fh:
+
+        conf = yaml.safe_load(fh)
+
+    with io.open(os.path.join(noisi_path,
+                              'config', 'config_comments.txt'), 'r+') as fh:
+        comments = fh.read()
 
     conf['date_created'] = time.strftime("%Y.%m.%d")
     conf['project_name'] = project_name
     conf['project_path'] = os.path.abspath(project_name)
 
-    with io.open(os.path.join(project_name, 'config.json'), 'w') as fh:
-        cf = json.dumps(conf, sort_keys=False, indent=4,
-                        separators=(",", ": "))
+    with io.open(os.path.join(project_name, 'config.yml'), 'w') as fh:
+        cf = yaml.dump(conf, sort_keys=False, indent=4)
         fh.write(cf)
-    print("Created project directory {}. Please edit config file and run \
+        fh.write(comments)
+    print("Created project directory {}.\nPlease edit config file and run \
 setup_sourcegrid.".format(project_name))
 
 

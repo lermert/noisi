@@ -12,7 +12,7 @@
     "hdur_pointsource":10,
     "station_channels": [
         "MXZ"
-	],
+    ],
     "synt_data": "DIS",
     "instaseis": false,
     "wavefield_path": "x"
