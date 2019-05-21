@@ -23,6 +23,8 @@ setup(
     #package_data = ,
     install_requires = [
         "obspy>=1.0.1",
+        "scipy>=0.16.0",
+        "cartopy",
         "geographiclib",
         "mpi4py>=2.0.0",
         "pandas",
