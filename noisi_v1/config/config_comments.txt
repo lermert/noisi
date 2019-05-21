@@ -1,0 +1,29 @@
+
+# date_created: added automatically, no need to edit
+# project_name: added automatically, no need to edit
+# project_path: added automatically, no need to edit
+# verbose: Print info or not (set to false for large runs)
+# grid_dx: grid step in meters. 
+# At the equator, 1 degree of latitude is approx. 110.5 km
+# grid_lat_min: minimum lat in degrees (-90 - 90) 
+# grid_lat_max: maximum lat in degrees (-90 - 90)
+# grid_lon_min: minimum lon in degrees (-180 - 180)
+# grid_lon_max: maximum lon in degrees (-180 - 180)
+# synt_data: specify if your synthetics shall be displacement
+#                (DIS), velocity (VEL) or acceleration (ACC)
+# wavefield_type: set here the type of wavefield you want to use: 
+# -- membrane (analytic Green's function for homogeneous membrane wave)
+# -- instaseis (use instaseis; need to specify the path to the instaseis
+#    database as wavefield_path)
+# -- custom (you need to prepare your own wave field if this is set, and
+#    specify the path to the files as wavefield_path)
+# wavefield_point_force: Force in N applied by each noise source. Note that if 
+# setting this very low, the amplitude of the correlations will become very 
+# small, and problems with numerical precision can arise.
+# wavefield_path: set here the path to instaseis database or your wavefield
+# database from another solver (not needed for analytic Green's functions)
+# wavefield_sampling_rate: Sampling rate for the instaseis or analytic 
+# waveforms green's functions in Hz.
+# wavefield_duration: Duration of prepared green's functions in seconds.
+# wavefield_filter: [freq_min, freq_max] of prepared green's functions in Hz.
+# wavefield_channel: Synthetics channel (of recording), Z, R or T

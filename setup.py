@@ -30,7 +30,7 @@ setup(
         "h5py"],
     entry_points = {
         'console_scripts': [
-            'noisi_v1 = noisi_v1.main:run'            
+            'noisi = noisi_v1.main:run'            
         ]
     },
 )

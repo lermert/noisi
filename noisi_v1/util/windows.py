@@ -22,7 +22,6 @@ def my_centered(arr, newsize):
 
     else:
         newarr[:] += arr[i0: i0 + newsize]
-
     return newarr
 
 

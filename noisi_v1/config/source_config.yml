@@ -1,0 +1,10 @@
+{
+    "project_path": "",
+    "source_name": "",
+    "source_path": "",
+    "date_created": "",
+    "get_auto_corr": true,
+    "model_observed_only": false,
+    "max_lag": 600,
+    "source_setup_file": "" 
+}

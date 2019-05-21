@@ -1,0 +1,11 @@
+# project_path: added automatically, no need to edit
+# source_name: added automatically, no need to edit
+# source_path: added automatically, no need to edit
+# date_created: added automatically, no need to edit
+# get_auto_corr: compute autocorrelations (true / false)
+# model_observed_only: if true, only station pairs for which observations
+#     are found in the observed_correlations folder will be modelled
+# max_lag: Maximum lag for cross-correlation in seconds
+# source setup file: File containing parameters that describe the 
+#     starting model for the source: Find an example
+#     under examples/source_setup_parameters.yaml

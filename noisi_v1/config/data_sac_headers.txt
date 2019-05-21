@@ -1,0 +1,25 @@
+SAC headers repurposed for noise cross-correlations
+===================================================
+
+'b': (float), minimum lag
+'e': (float), maximum lag
+'stla': (float), Latitude of station 1
+'stlo': (float), Longitude of station 1
+'evla': (float), Latitude of station 2
+'evlo': (float), Longitude of station 2
+'user0': (float), Number of stacked windows
+'user1': (float), window length for observed cross-correlation computation
+'user2': (float), window overlap during observed cross-correlation computation
+'dist': (float), station pair distance in m
+'az': (float), station pair azimuth in degree
+'baz': (float), station pair back azimuth in degree
+'kstnm': (string), station code of station 1
+'kevnm': (string), station code of station 1
+'kt0': (string), date of earliest window in cross-correlation stack (YYYYjjj)
+'kt1': (string), date of latest window in cross-correlation stack (YYYYjjj)
+'kuser0': (string), network code of station 2
+'kuser1': (string), location code of station 2
+'kuser2': (string), channel code of station 2
+'kcmpnm': (string), channel code of station 1
+'knetwk': (string), network code of station 1
+ 

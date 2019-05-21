@@ -1,0 +1,14 @@
+{
+  "date_created": "",
+  "mtype": "energy_diff",
+  "taper_perc": 0.01,
+  "bandpass": [[0.05,0.1,5]],
+  "weights": [1.0],
+  "g_speed": 3000,
+  "window_params_wtype": "hann",
+  "window_params_hw": 20,
+  "window_params_win_overlap": false,
+  "window_params_sep_noise": 2.0,
+  "window_plot_measurements": false,
+  "ignore_network": false
+}

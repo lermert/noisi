@@ -1,0 +1,21 @@
+# "date_created": added automatically, no need to edit
+# "mtype": type of measurement; choose between "ln_energy_ratio",
+# "square_envelope", "energy_diff"
+# "taper_perc": 0.01,
+# "bandpass": [[0.05,0.1,5]]: Bandpass filters (list of (lower, upper, order)).
+#    Each entry and bandpass list will produce one measurement
+# "weights": [1.0]: Weights of measurements in same order as bandpass filters
+# "ignore_network": When matching data and synthetics, setting this parameter
+#    to true means that only station codes are considered (e.g. II.BFO..LHZ and
+#    BF.BFO..LHZ will be regarded as the same channel.)
+
+# all the following parameters are for measurements in approx. 
+#    surface wave window:
+# "g_speed": # estimated Rayleigh wave group speed
+# "window_params_wtype": window type; choose between "hann" and "boxcar"
+# "window_params_hw": half width of window
+# "window_params_win_overlap": for short distances, windows may overlap. 
+#    If this parameter is set to true, such measurements will still be taken.
+# "window_params_sep_noise": Separation of noise window from signal window 
+#    in multiples of window halfwidth
+# "window_plot_measurements": plot or not

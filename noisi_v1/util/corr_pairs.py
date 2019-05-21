@@ -1,6 +1,7 @@
 from glob import glob
 import os
 from pandas import read_csv
+import yaml
 
 
 def define_correlationpairs(proj_dir, auto_corr=False,
@@ -48,7 +49,9 @@ def define_correlationpairs(proj_dir, auto_corr=False,
 
 def rem_no_obs(stapairs, source_conf, directory, ignore_network=True):
 
-    channel = source_conf['channel']
+    conf = yaml.safe_load(open(os.path.join(source_conf['project_path'],
+                                            'config.yml')))
+    channel = conf['wavefield_channel']
     channel = '??' + channel[-1]
 
     stapairs_new = []
@@ -70,17 +73,19 @@ def rem_no_obs(stapairs, source_conf, directory, ignore_network=True):
 def rem_fin_prs(stapairs, source_conf, step):
 
     """
-    Remove those station pairs from the list for which correlation / kernel has already 
-    been calculated.
+    Remove those station pairs from the list for which correlation / kernel
+    has already been calculated.
     :param sta_pairs: List of all station pairs
     :param source_conf: source config dictionary
     :param step: step nr
     """
 
-    channel = source_conf['channel']
+    conf = yaml.safe_load(open(os.path.join(source_conf['project_path'],
+                                            'config.yml')))
+    channel = 'MX' + conf['wavefield_channel']
 
-    mod_dir = os.path.join(source_conf['source_path'], 'step_{}'.format(step),
-                           'corr')
+    mod_dir = os.path.join(source_conf['source_path'],
+                           'iteration_{}'.format(step), 'corr')
 
     stapairs_new = []
     for sp in stapairs:
@@ -173,7 +178,6 @@ def get_synthetics_filename(obs_filename, dir, synth_location='',
             print('No synthetic file found for data:')
             print(obs_filename)
 
-
     return sfilename
 
 
@@ -195,11 +199,10 @@ def glob_obs_corr(sta1, sta2, directory, ignore_network):
         net1 = inf1[0]
         net2 = inf2[0]
 
-
-    obs_filename1 = os.path.join(directory,'{}.{}.*.{}*{}.{}.*.{}.*'.format(
-        net1,sta1,cha1,net2,sta2,cha2))
-    obs_filename2 = os.path.join(directory,'{}.{}.*.{}*{}.{}.*.{}.*'.format(
-        net2,sta2,cha2,net1,sta1,cha1))
+    obs_filename1 = os.path.join(directory, '{}.{}.*.{}*{}.{}.*.{}.*'.format(
+        net1, sta1, cha1, net2, sta2, cha2))
+    obs_filename2 = os.path.join(directory, '{}.{}.*.{}*{}.{}.*.{}.*'.format(
+        net2, sta2, cha2, net1, sta1, cha1))
 
     if ignore_network:
         obs_files = glob(obs_filename1)
