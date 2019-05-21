@@ -14,6 +14,6 @@ When the requirements are met, the tool can be set up by cloning, changing into 
 
 After installation, consider running pytest in the noisi_v1/noisi directory. 
 
-To see an overview of the tool, type noisi_v1 --help.
+To see an overview of the tool, type noisi --help.
 
 
