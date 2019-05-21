@@ -5,22 +5,22 @@ This tool can be used to simulate noise cross-correlations and sensitivity kerne
 ### Installation
 
 Install requirements (easiest done with anaconda)
-[obspy](https://docs.obspy.org/)
-cartopy
-pandas
-mpi4py
 
-If installing in a conda environment with pip, pip will try to fulfill most requirements automatically.
+- [obspy](https://docs.obspy.org/)
+- cartopy
+- pandas
+- mpi4py
 
-If you encounter problems with mpi4py, try reinstalling it using pip (`pip install mpi4py`).
+If installing in a conda environment with pip, pip will try to fulfill most requirements automatically. If you encounter problems with mpi4py, try reinstalling it using pip (`pip install mpi4py`).
 
 Clone the repository with git:
 `git clone https://github.com/lermert/noisi_v1.git`
 
-Change into the top noisi_v1/ directory. Call `pip install -v` .
+Change into the `noisi_v1/` directory. Call `pip install -v` .
 
 After installation, consider running `pytest` in the `noisi_v1/noisi_v1` directory. 
 
+### Getting started
 To see an overview of the tool, type `noisi --help`.
-
+A step-by-step tutorial for jupyter notebook can be found in the `noisi_v1/noisi_v1` directory.
 
