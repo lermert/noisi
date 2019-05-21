@@ -89,12 +89,11 @@ def get_adj_func(mtype):
     elif mtype == 'windowed_waveform':
         func = windowed_waveform
 
-    elif mtype == 'square_envelope':
-        func = square_envelope
+    # elif mtype == 'square_envelope':
+    #    func = square_envelope
 
     else:
         msg = 'Measurement functional %s not currently implemented. \
-Must be one of ln_energy_ratio, energy_diff, windowed_waveform, \
-square_envelope.' % mtype
+Must be one of ln_energy_ratio, energy_diff, windowed_waveform.' % mtype
         raise ValueError(msg)
     return func

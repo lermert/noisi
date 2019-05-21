@@ -5,7 +5,7 @@ This tool can be used to simulate noise cross-correlations and sensitivity kerne
 ### Installation
 
 Install requirements (easiest done with anaconda)
-
+- [instaseis](http://instaseis.net/)
 - [obspy](https://docs.obspy.org/)
 - cartopy
 - pandas

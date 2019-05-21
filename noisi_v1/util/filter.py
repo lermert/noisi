@@ -15,9 +15,8 @@
 import warnings
 from scipy.signal import iirfilter
 try:
-    from scipy.signal import zpk2sos, sosfilt
+    from scipy.signal import zpk2sos
 except ImportError:
-    from obspy.signal._sosfilt import _sosfilt as sosfilt
     from obspy.signal._sosfilt import _zpk2sos as zpk2sos
 from scipy.signal import cheb2ord, cheby2
 
@@ -31,7 +30,8 @@ Various Seismogram Filtering Functions from obspy
     (https://www.gnu.org/copyleft/lesser.html)
 """
 
-def cheby2_lowpass(df,freq,maxorder=8):
+
+def cheby2_lowpass(df, freq, maxorder=8):
     # From obspy
     nyquist = df * 0.5
     # rp - maximum ripple of passband, rs - attenuation of stopband
@@ -89,6 +89,7 @@ def bandpass(freqmin, freqmax, df, corners=4):
                         ftype='butter', output='zpk')
     sos = zpk2sos(z, p, k)
     return sos
+
 
 def lowpass(freq, df, corners=4):
     """
