@@ -16,7 +16,7 @@ from noisi_v1.util.corr_pairs import rem_fin_prs, rem_no_obs
 import instaseis
 
 
-def paths_input(cp, source_conf, step, ignore_network, instaseis):
+def paths_input(cp, source_conf, step, ignore_network, instaseis=False):
 
     inf1 = cp[0].split()
     inf2 = cp[1].split()
