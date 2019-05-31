@@ -8,10 +8,13 @@ Install requirements (easiest done with anaconda)
 - [instaseis](http://instaseis.net/)
 - [obspy](https://docs.obspy.org/)
 - cartopy
+- PyYaml
 - pandas
 - mpi4py
 
-If installing in a conda environment with pip, pip will try to fulfill most requirements automatically. If you encounter problems with mpi4py, try reinstalling it using pip (`pip install mpi4py`).
+Additionally, install jupyter notebook if you intend to run the tutorial (see below).
+
+If you encounter problems with mpi4py, try reinstalling it using pip (`pip install mpi4py`).
 
 Clone the repository with git:
 `git clone https://github.com/lermert/noisi_v1.git`
