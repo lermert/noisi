@@ -17,7 +17,7 @@ from noisi_v1.util.corr_pairs import *
 import instaseis
 
 
-def paths_input(cp, source_conf, step, ignore_network, instaseis):
+def paths_input(cp, source_conf, step, ignore_network, instaseis=False):
 
     inf1 = cp[0].split()
     inf2 = cp[1].split()
@@ -98,7 +98,7 @@ def paths_output(cp, source_conf, step):
     return (kern_basicname)
 
 
-def g1g2_kern(wf1str, wf2str, kernel, adjt, src, source_conf, insta):
+def g1g2_kern(wf1str, wf2str, kernel, adjt, src, source_conf, insta=False):
 
     measr_conf = yaml.safe_load(open(os.path.join(source_conf['source_path'],
                                                   'measr_config.yml')))
@@ -274,10 +274,6 @@ def run_kern(args):
     config = yaml.safe_load(open(configfile))
 
     obs_only = source_config['model_observed_only']
-    if config['wavefield_type'] == 'instaseis':
-        insta = True
-    else:
-        insta = False
     auto_corr = False
     try:
         auto_corr = source_config['get_auto_corr']
@@ -332,13 +328,13 @@ def run_kern(args):
     for cp in p_p:
         try:
             wf1, wf2, src, adjt = paths_input(cp, source_config,
-                                              step, ignore_network, insta)
+                                              step, ignore_network)
             kernel = paths_output(cp, source_config, step)
 
         except (IOError, IndexError):
             warn('Could not find input for: %s\
 #\nCheck if wavefield .h5 file and base_model file are available.' % cp)
 #            continue
-        g1g2_kern(wf1, wf2, kernel, adjt, src, source_config, insta=insta)
+        g1g2_kern(wf1, wf2, kernel, adjt, src, source_config)
 
     return()

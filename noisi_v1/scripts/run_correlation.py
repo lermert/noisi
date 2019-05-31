@@ -77,7 +77,7 @@ def path_output(cp, source_conf, step, channel):
     return corr_trace_name
 
 
-def get_ns(wf1, source_conf, insta):
+def get_ns(wf1, source_conf, insta=False):
     # Nr of time steps in traces
     if insta:
         # get path to instaseis db
@@ -92,7 +92,7 @@ def get_ns(wf1, source_conf, insta):
                                                                 longitude=0.),
                                    receiver=instaseis.Receiver(latitude=10.,
                                                                longitude=0.),
-                                   dt=1. / source_conf['sampling_rate'])[0]
+                                   dt=1. / conf['wavefield_sampling_rate'])[0]
 
         nt = stest.stats.npts
         Fs = stest.stats.sampling_rate
@@ -117,7 +117,7 @@ def get_ns(wf1, source_conf, insta):
     return nt, n, n_corr, Fs
 
 
-def g1g2_corr(wf1, wf2, corr_file, src, source_conf, insta):
+def g1g2_corr(wf1, wf2, corr_file, src, source_conf, insta=False):
     """
     Compute noise cross-correlations from two .h5 'wavefield' files.
     Noise source distribution and spectrum is given by starting_model.h5
@@ -188,7 +188,7 @@ def g1g2_corr(wf1, wf2, corr_file, src, source_conf, insta):
                 fsrc = instaseis.ForceSource(latitude=lat_src,
                                              longitude=lon_src,
                                              f_r=1.e12)
-                Fs = source_conf['sampling_rate']
+                Fs = conf['wavefield_sampling_rate']
                 s1 = db.get_seismograms(source=fsrc, receiver=rec1,
                                         dt=1. / Fs)[0].data * taper
                 s2 = db.get_seismograms(source=fsrc, receiver=rec2,
@@ -263,10 +263,6 @@ def run_corr(args):
     config = yaml.safe_load(open(os.path.join(source_config['project_path'],
                                               'config.yml')))
     obs_only = source_config['model_observed_only']
-    if config['wavefield_type'] == 'instaseis':
-        insta = True
-    else:
-        insta = False
     channel = 'MX' + config['wavefield_channel']
     auto_corr = False  # default value
     try:
@@ -345,7 +341,7 @@ def run_corr(args):
         # out try-except to see the error messages.
         try:
             wf1, wf2, src = paths_input(cp, source_config,
-                                        step, ignore_network, insta)
+                                        step, ignore_network)
 
             corr = path_output(cp, source_config, step, channel)
             print(corr)
@@ -357,5 +353,5 @@ def run_corr(args):
         if os.path.exists(corr):
             continue
 
-        g1g2_corr(wf1, wf2, corr, src, source_config, insta=insta)
+        g1g2_corr(wf1, wf2, corr, src, source_config)
     return()

@@ -98,6 +98,9 @@ class precomp_wavefield(object):
         if self.config['wavefield_type'] == 'instaseis':
             path_to_db = self.config['wavefield_path']
             self.db = instaseis.open_db(path_to_db)
+            if self.db.info['length'] < self.npts / self.Fs:
+                warn("Resetting wavefield duration to axisem database length.")
+                self.npts = self.db.info['length'] * self.Fs
 
     def green_from_instaseis(self, station):
 
@@ -138,11 +141,11 @@ class precomp_wavefield(object):
             f.create_dataset('sourcegrid', data=self.sourcegrid)
 
             # DATASET Nr 3: Seismograms itself
-            f.create_dataset('data', (self.ntraces, self.npts),
-                             dtype=np.float32)
+            traces = f.create_dataset('data', (self.ntraces, self.npts),
+                                      dtype=np.float32)
 
             for i in range(self.ntraces):
-                if i % 1000 == 1 and self.config['verbose']:
+                if i % 1000 == 0 and i > 0 and self.config['verbose']:
                     print('Converted %g of %g traces' % (i, self.ntraces))
 
                 lat_src = geograph_to_geocent(self.sourcegrid[1, i])
@@ -168,7 +171,7 @@ class precomp_wavefield(object):
                     raise ValueError('Unknown data quantity. \
 Choose DIS, VEL or ACC in configuration.')
 
-        values = values[c_index]
+                traces[i, :] = values[c_index][0: self.npts]
 
     def green_spec_analytic(self, distance_in_m):
 
