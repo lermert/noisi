@@ -14,12 +14,12 @@ Install requirements (easiest done with anaconda)
 
 Additionally, install jupyter notebook if you intend to run the tutorial (see below).
 
-If you encounter problems with mpi4py, try reinstalling it using pip (`pip install mpi4py`).
+If you encounter problems with mpi4py, try removing it and reinstalling it using pip (`pip install mpi4py`).
 
 Clone the repository with git:
 `git clone https://github.com/lermert/noisi_v1.git`
 
-Change into the `noisi_v1/` directory. Call `pip install -v` .
+Change into the `noisi_v1/` directory. Call `pip install -v .` here.
 
 After installation, consider running `pytest` in the `noisi_v1/noisi_v1` directory. 
 
