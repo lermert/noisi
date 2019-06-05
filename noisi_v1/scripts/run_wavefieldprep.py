@@ -56,6 +56,8 @@ class precomp_wavefield(object):
             self.function = self.green_analytic
         elif self.config['wavefield_type'] == 'instaseis':
             self.function = self.green_from_instaseis
+            if 'instaseis' not in locals():
+                raise ImportError('Module instaseis was not found.')
         elif self.config['wavefield_type'] == 'custom':
             warn('Cannot prepare custom wave field,\
  choose instaseis or analytic or prepare your own.')
