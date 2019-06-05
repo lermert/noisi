@@ -12,7 +12,7 @@
 # synt_data: specify if your synthetics shall be displacement
 #                (DIS), velocity (VEL) or acceleration (ACC)
 # wavefield_type: set here the type of wavefield you want to use: 
-# -- membrane (analytic Green's function for homogeneous membrane wave)
+# -- analytic (analytic Green's function for homogeneous membrane wave)
 # -- instaseis (use instaseis; need to specify the path to the instaseis
 #    database as wavefield_path)
 # -- custom (you need to prepare your own wave field if this is set, and

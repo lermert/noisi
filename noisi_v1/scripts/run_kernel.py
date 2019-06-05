@@ -14,7 +14,10 @@ from noisi_v1.scripts.run_correlation import get_ns
 from noisi_v1.util.windows import my_centered
 from noisi_v1.util.geo import geograph_to_geocent
 from noisi_v1.util.corr_pairs import *
-import instaseis
+try:
+    import instaseis
+except ImportError:
+    pass
 
 
 def paths_input(cp, source_conf, step, ignore_network, instaseis=False):

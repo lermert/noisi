@@ -12,7 +12,10 @@ from noisi_v1 import WaveField
 from noisi_v1.util.geo import geograph_to_geocent
 from glob import glob
 from mpi4py import MPI
-import instaseis
+try:
+    import instaseis
+except ImportError:
+    pass
 comm = MPI.COMM_WORLD
 size = comm.Get_size()
 rank = comm.Get_rank()

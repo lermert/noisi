@@ -36,11 +36,10 @@ setup(
         "geographiclib",
         "mpi4py>=2.0.0",
         "pandas",
-        "instaseis",
         "h5py"],
     entry_points = {
         'console_scripts': [
-            'noisi = noisi_v1.main:run'            
+            'noisi = noisi_v1.main:run'
         ]
     },
 )
