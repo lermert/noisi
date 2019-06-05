@@ -5,14 +5,14 @@ This tool can be used to simulate noise cross-correlations and sensitivity kerne
 ### Installation
 
 Install requirements (easiest done with anaconda)
-- [instaseis](http://instaseis.net/)
 - [obspy](https://docs.obspy.org/)
 - cartopy
 - PyYaml
 - pandas
 - mpi4py
 
-Additionally, install jupyter notebook if you intend to run the tutorial (see below).
+Additionally, install [instaseis](http://instaseis.net/), if you plan to use it for Green's functions.
+Install jupyter notebook if you intend to run the tutorial (see below).
 
 If you encounter problems with mpi4py, try removing it and reinstalling it using pip (`pip install mpi4py`).
 
