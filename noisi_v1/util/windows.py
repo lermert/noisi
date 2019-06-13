@@ -4,23 +4,25 @@ from warnings import warn
 
 def my_centered(arr, newsize):
 
+    if newsize % 2 == 0:
+        raise ValueError('Newsize must be odd.')
+
     # pad with zeros, if newsize > len(arr)
     newarr = np.zeros(newsize)
 
     # get the center portion of a 1-dimensional array correctly
     n = len(arr)
     i0 = (n - newsize) // 2
-    if n % 2 == 0:
-        # This is somehow a matter of definition,
-        # because the array has no 'center' sample
-        i0 += 1
 
     if i0 < 0:
-
         i0 = (newsize - n) // 2
         newarr[i0: i0 + n] += arr
 
     else:
+        if n % 2 == 0:
+            # This is somehow a matter of definition,
+                # because the array has no 'center' sample
+                i0 += 1
         newarr[:] += arr[i0: i0 + newsize]
     return newarr
 
@@ -70,9 +72,9 @@ def get_window(stats, g_speed, params):
 
     # Find indices for window bounds
     ind_lo = int((dist / g_speed - params['hw']) * Fs) + s_0
-    ind_hi = int((dist / g_speed + params['hw']) * Fs) + s_0
+    ind_hi = ind_lo + int(2 * params['hw'] * Fs) + 1
     ind_lo_n = ind_hi + int(params['sep_noise'] * params['hw'] * Fs)
-    ind_hi_n = ind_lo_n + int(2 * params['hw'] * Fs)
+    ind_hi_n = ind_lo_n + int(2 * params['hw'] * Fs) + 1
 
     # Checks..overlap, out of bounds
     scs = window_checks(ind_lo, ind_hi, ind_lo_n,
@@ -92,7 +94,6 @@ def get_window(stats, g_speed, params):
 
 def window(wtype, n, i0, i1):
     win = np.zeros(n)
-
     if wtype is None:
         win += 1.
     elif wtype == 'boxcar':
@@ -120,9 +121,7 @@ def snratio(correlation, g_speed, window_params):
     if window[2]:
         signl = np.sum((win_s * correlation.data) ** 2)
         noise = np.sum((win_n * correlation.data) ** 2)
-
         snr = signl / (noise + np.finfo(noise).tiny)
-
     else:
         snr = np.nan
     return snr

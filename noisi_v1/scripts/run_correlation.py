@@ -174,7 +174,7 @@ def g1g2_corr(wf1, wf2, corr_file, src, source_conf, insta=False):
                 raise ValueError("Wave field and source not consistent.")
 
         # Loop over source locations
-        print_each_n = round(max(ntraces // 5, 1), -1)
+        print_each_n = max(5, round(max(ntraces // 5, 1), -1))
         for i in range(ntraces):
 
             # noise source spectrum at this location

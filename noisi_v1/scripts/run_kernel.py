@@ -145,10 +145,10 @@ def g1g2_kern(wf1str, wf2str, kernel, adjt, src, source_conf, insta=False):
             except IndexError:
                 warn('No adjoint source found: {}\n'.format(a))
 
-    if len(f) > 0:
-        adjt_srcs.append(f)
-    else:
-        return()
+        if len(f) > 0:
+            adjt_srcs.append(f)
+        else:
+            return()
 
 
 ########################################################################
@@ -189,7 +189,7 @@ def g1g2_kern(wf1str, wf2str, kernel, adjt, src, source_conf, insta=False):
         kern = np.zeros((filtcnt, ntraces, len(adjt)))
 
         # Loop over locations
-        print_each_n = round(max(ntraces // 5, 1), -1)
+        print_each_n = max(5, round(max(ntraces // 5, 1), -1))
         for i in range(ntraces):
 
             # noise source spectrum at this location

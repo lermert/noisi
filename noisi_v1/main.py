@@ -1,11 +1,12 @@
 import argparse
 from noisi_v1.scripts.source_grid import setup_sourcegrid as setup_sgrid
 from noisi_v1.util.setup_new import setup_proj
-from noisi_v1.scripts.run_correlation import run_corr
+# from noisi_v1.scripts.run_correlation import run_corr
+from noisi_v1.scripts.correlation import run_corr
 from noisi_v1.scripts.run_wavefieldprep import precomp_wavefield
 from noisi_v1.scripts.run_sourcesetup import source_setup
 from noisi_v1.scripts.run_measurement import run_measurement
-from noisi_v1.scripts.run_kernel import run_kern
+from noisi_v1.scripts.kernel import run_kern
 
 
 def hello(args):
@@ -110,7 +111,7 @@ parser_measurement.add_argument('--ignore_network',
 parser_measurement.set_defaults(func=run_measurement)
 
 # ###########################################################################
-# Get kernels (without residuals multiplied)
+# Get kernels
 # ###########################################################################
 parser_kernel = subparsers.add_parser('kernel', help='Calculate sensitivity \
 kernels.')

@@ -4,12 +4,12 @@ from obspy import Trace
 from noisi_v1.scripts import measurements as rm
 from noisi_v1.scripts import adjnt_functs as af
 
-# more or less copying Korbi's test with my measurement and adjoint source
+# more or less replicating Korbi's test with my measurement and adjoint source
 # *********************************************
 # input:
 # *********************************************
 steps = np.arange(-14, 0, 0.1)
-mtype = 'square_envelope'  # 'ln_energy_ratio'
+mtype = 'windowed_waveform'
 sacdict = {'dist': 1e6}
 g_speed = 3700.
 window_params = {}

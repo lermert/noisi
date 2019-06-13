@@ -83,6 +83,11 @@ def len_deg_lat(lat):
 
 def get_spherical_surface_elements(lon, lat, r=6.378100e6):
 
+    if len(lon) < 3:
+        raise ValueError('Grid must have at least 3 points.')
+    if len(lon) != len(lat):
+        raise ValueError('Grid x and y must have same length.')
+
     # surfel
     surfel = np.zeros(lon.shape)
     colat = 90. - lat
