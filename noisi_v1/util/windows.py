@@ -20,9 +20,9 @@ def my_centered(arr, newsize):
 
     else:
         if n % 2 == 0:
-            # This is somehow a matter of definition,
-                # because the array has no 'center' sample
-                i0 += 1
+            # This is arbitrary
+            # because the array has no 'center' sample
+            i0 += 1
         newarr[:] += arr[i0: i0 + newsize]
     return newarr
 

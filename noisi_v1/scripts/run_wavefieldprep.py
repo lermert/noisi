@@ -5,10 +5,11 @@ from pandas import read_csv
 from warnings import warn
 import numpy as np
 from math import pi
-from scipy.signal import hann
 import h5py
 from obspy.geodetics import gps2dist_azimuth
 from noisi_v1 import WaveField
+from scipy.fftpack import next_fast_len
+from scipy.signal import lfilter, butter
 from noisi_v1.util.geo import geograph_to_geocent
 from glob import glob
 from mpi4py import MPI
@@ -38,7 +39,7 @@ class precomp_wavefield(object):
         self.config = config
 
         if self.config['wavefield_type'] == 'instaseis'\
-           and 'instaseis' not in locals():
+           and not 'instaseis' in globals():
             raise ImportError('Module instaseis was not found.')
 
         # create output folder
@@ -87,27 +88,50 @@ class precomp_wavefield(object):
 
         # initialize parameters
         self.Fs = self.config['wavefield_sampling_rate']
-        self.npts = int(self.config['wavefield_duration'] / self.Fs)
+        self.npts = int(self.config['wavefield_duration'] * self.Fs)
         self.ntraces = self.sourcegrid.shape[-1]
         self.data_quantity = self.config['synt_data']
-        self.freq = np.fft.rfftfreq(2 * self.npts, d=1.0 / self.Fs)
 
-        # Apply a freq. domain taper to suppress high and low frequencies.
-        freq_max = self.Fs / 2.0  # Nyquist
-        if freq_max < self.config['wavefield_filter'][1]:
-            warn("Selected upper filter corner is above Nyquist.\
- It will be reset.")
-        freq_min = 1. / self.config['wavefield_duration']  # lowest resolved
-        freq_max = min(freq_max, self.config['wavefield_filter'][1])
-        freq_min = min(freq_min, self.config['wavefield_filter'][0])
-        self.filt = [freq_min, freq_max]
+        if self.config['wavefield_domain'] == 'fourier':
+            self.fdomain = True
+            self.npad = 2 * self.npts - 2
+        elif self.config['wavefield_domain'] == 'time':
+            self.fdomain = False
+            self.npad = next_fast_len(2 * self.npts - 1)
+        else:
+            raise ValueError('Unknown domain {}.'.format(self.config
+                                                         ['wavefield_domain']))
+        self.freq = np.fft.rfftfreq(self.npad, d=1.0 / self.Fs)
 
+        # Apply a filter
+        if self.config['wavefield_filter'] is not None:
+            freq_nyq = self.Fs / 2.0  # Nyquist
+            if freq_nyq < self.config['wavefield_filter'][1]:
+                warn("Selected upper freq reset to Nyquist freq (was above).")
+            freq_minres = 1. / self.config['wavefield_duration']
+            # lowest resolved
+            freq_max = min(freq_nyq, self.config['wavefield_filter'][1])
+            freq_min = max(freq_minres, self.config['wavefield_filter'][0])
+
+            f0 = freq_min / freq_nyq
+            f1 = freq_max / freq_nyq
+            self.filter = butter(4, [f0, f1], 'bandpass')
+        else:
+            self.filter = None
+
+        # if using instaseis: Find and open database
         if self.config['wavefield_type'] == 'instaseis':
             path_to_db = self.config['wavefield_path']
             self.db = instaseis.open_db(path_to_db)
             if self.db.info['length'] < self.npts / self.Fs:
                 warn("Resetting wavefield duration to axisem database length.")
-                self.npts = self.db.info['length'] * self.Fs
+                fsrc = instaseis.ForceSource(latitude=0.0,
+                                             longitude=0.0, f_r=1.0)
+                rec = instaseis.Receiver(latitude=0.0, longitude=0.0)
+                test = self.db.get_seismograms(source=fsrc,
+                                               receiver=rec,
+                                               dt=1. / self.Fs)
+                self.npts = test[0].stats.npts
 
     def green_from_instaseis(self, station):
 
@@ -143,13 +167,23 @@ class precomp_wavefield(object):
             stats.attrs['ntraces'] = self.ntraces
             stats.attrs['Fs'] = self.Fs
             stats.attrs['nt'] = int(self.npts)
+            stats.attrs['npad'] = self.npad
+            if self.fdomain:
+                stats.attrs['fdomain'] = True
+            else:
+                stats.attrs['fdomain'] = False
 
             # DATASET NR 2: Source grid
             f.create_dataset('sourcegrid', data=self.sourcegrid)
 
             # DATASET Nr 3: Seismograms itself
-            traces = f.create_dataset('data', (self.ntraces, self.npts),
-                                      dtype=np.float32)
+            if self.fdomain:
+                traces = f.create_dataset('data', (self.ntraces,
+                                                   self.npts + 1),
+                                          dtype=np.complex64)
+            else:
+                traces = f.create_dataset('data', (self.ntraces, self.npts),
+                                          dtype=np.float32)
 
             for i in range(self.ntraces):
                 if i % 1000 == 0 and i > 0 and self.config['verbose']:
@@ -164,6 +198,7 @@ class precomp_wavefield(object):
                     values = self.db.get_seismograms(source=fsrc,
                                                      receiver=rec,
                                                      dt=1. / self.Fs)
+
                 elif self.config['synt_data'] == 'VEL':
                     values = self.db.get_seismograms(source=fsrc,
                                                      receiver=rec,
@@ -178,7 +213,18 @@ class precomp_wavefield(object):
                     raise ValueError('Unknown data quantity. \
 Choose DIS, VEL or ACC in configuration.')
 
-                traces[i, :] = values[c_index][0: self.npts]
+                if self.filter is not None:
+                    trace = lfilter(*self.filter, values[c_index].data)
+                else:
+                    trace = values[c_index].data
+
+                if self.fdomain:
+                    trace_fd = np.fft.rfft(trace[0: self.npts],
+                                           n=self.npad)
+                    traces[i, :] = trace_fd
+                else:
+                    traces[i, :] = trace[0: self.npts]
+        return()
 
     def green_spec_analytic(self, distance_in_m):
 
@@ -186,7 +232,7 @@ Choose DIS, VEL or ACC in configuration.')
         q = self.args.q
         rho = self.args.rho
         freq = self.freq
-        w = 2 * pi * freq
+        w = 2. * pi * freq
         g_fd = np.zeros(freq.shape, dtype=np.complex)
         f = float(self.config['wavefield_point_force'])
 
@@ -217,7 +263,7 @@ Choose DIS, VEL or ACC in configuration.')
         # initialize the file
         f_out = os.path.join(self.wf_path, station_id + '.h5')
 
-        with h5py.File(f_out, "w") as f:
+        with h5py.File(f_out, "w", ) as f:
 
             # DATASET NR 1: STATS
             stats = f.create_dataset('stats', data=(0,))
@@ -226,13 +272,22 @@ Choose DIS, VEL or ACC in configuration.')
             stats.attrs['ntraces'] = self.ntraces
             stats.attrs['Fs'] = self.Fs
             stats.attrs['nt'] = int(self.npts)
+            stats.attrs['npad'] = self.npad
+            if self.fdomain:
+                stats.attrs['fdomain'] = True
+            else:
+                stats.attrs['fdomain'] = False
 
             # DATASET NR 2: Source grid
             f.create_dataset('sourcegrid', data=self.sourcegrid)
 
             # DATASET Nr 3: Seismograms itself
-            f.create_dataset('data', (self.ntraces, self.npts),
-                             dtype=np.float32)
+            if self.fdomain:
+                f.create_dataset('data', (self.ntraces, self.npts),
+                                 dtype=np.complex)
+            else:
+                f.create_dataset('data', (self.ntraces, self.npts),
+                                 dtype=np.float)
 
             # loop over source locations
             for i in range(self.ntraces):
@@ -242,18 +297,19 @@ Choose DIS, VEL or ACC in configuration.')
 
                 g_fd = self.green_spec_analytic(r)
 
-                # apply the freq. domain taper
-                taper = np.zeros(self.freq.shape)
-                i0 = np.argmin(np.abs(self.freq - self.filt[0]))
-                i1 = np.argmin(np.abs(self.freq - self.filt[1]))
-                taper[i0: i1] = hann(i1 - i0)
+                # transform back to time
+                s = np.fft.irfft(g_fd, n=self.npad)[0: self.npts]
 
-            # transform back to time domain
-                g1_td_taper = np.fft.irfft(taper * g_fd)[0: self.npts]
+                # apply a filter if asked for
+                if self.filter is not None:
+                        trace = lfilter(*self.filter, s)
 
-            # write the result
-                f['data'][i, :] = g1_td_taper
-                f.flush()
+                if self.fdomain:
+                    f['data'][i, :] = np.fft.rfft(trace, n=self.npad)
+                else:
+                    f['data'][i, :] = trace
+                # flush
+                    f.flush()
 
             # close output file
             f.close()

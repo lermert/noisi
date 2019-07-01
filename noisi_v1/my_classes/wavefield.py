@@ -17,18 +17,12 @@ from warnings import warn
 class WaveField(object):
     """
     Object to handle database of stored wavefields.
-    Basically, just a few methods to work on wavefields
-    stored in an hdf5 file.
-    The stored seismograms have to have sampling rate as attribute Fs and
-    number of time steps as attribute ntime; They have to have an ID of format
-    net.sta.loc.cha
+    Methods to work on wavefields stored in an hdf5 file.
     """
 
-    def __init__(self, file, sourcegrid=None, fdomain=False, w='r'):
+    def __init__(self, file, sourcegrid=None, w='r'):
 
         self.w = w
-        self.fdomain = fdomain
-        self.complex = complex
 
         try:
             self.file = h5py.File(file, self.w)
@@ -37,16 +31,21 @@ class WaveField(object):
             raise IOError(msg)
 
         self.stats = dict(self.file['stats'].attrs)
+        self.fdomain = self.stats['fdomain']
         self.sourcegrid = self.file['sourcegrid']
 
         self.data = self.file['data']
+
+        if self.fdomain:
+            self.freq = np.fft.rfftfreq(self.stats['npad'],
+                                        d=1. / self.stats['Fs'])
 
     def get_green(self, ix=None, by_index=True):
 
         if by_index:
             return(self.data[ix, :])
         else:
-            raise NotImplementedError("Not implemented.")
+            raise NotImplementedError("Not yet implemented.")
 
     def copy_setup(self, newfile, nt=None,
                    ntraces=None, w='r+'):
@@ -81,6 +80,9 @@ class WaveField(object):
 
     def truncate(self, newfile, truncate_after_seconds):
 
+        if self.fdomain:
+            raise NotImplementedError()
+
         nt_new = int(round(truncate_after_seconds * self.stats['Fs']))
         with self.copy_setup(newfile, nt=nt_new) as wf:
             for i in range(self.stats['ntraces']):
@@ -94,6 +96,9 @@ class WaveField(object):
 
     def filter_all(self, type, overwrite=False, zerophase=True,
                    outfile=None, **kwargs):
+
+        if self.fdomain:
+            raise NotImplementedError('Not implemented yet, filter beforehand')
 
         if type == 'bandpass':
             sos = filter.bandpass(df=self.stats['Fs'], **kwargs)
@@ -132,6 +137,8 @@ reopen to read / modify.' % newfile.file.filename)
         """
         Decimate the wavefield and save to a new file
         """
+        if self.fdomain:
+            raise NotImplementedError()
 
         fs_old = self.stats['Fs']
         freq = self.stats['Fs'] * 0.4 / float(decimation_factor)
@@ -167,9 +174,25 @@ resetting to last sample.')
             t_sample = np.shape(self.data)[1] - 1
 
         if resolution == 1:
-            snapshot = self.data[:, t_sample]
+            if self.fdomain:
+                snapshot = np.zeros(self.stats['ntraces'])
+                for i in range(self.stats['ntraces']):
+                    snapshot[i] = np.trapz(self.data[i, :] *
+                                           np.exp(self.freq *
+                                           np.pi * 2. * 1.j * t_sample),
+                                           dx=self.stats['Fs']).real
+            else:
+                snapshot = self.data[:, t_sample]
         else:
-            snapshot = self.data[0::resolution, t_sample]
+            if self.fdomain:
+                snapshot = np.zeros(self.data[0::resolution, 0].shape)
+                for i in range(len(snapshot)):
+                    snapshot[i] = np.trapz(self.data[i, :] *
+                                           np.exp(self.freq *
+                                           np.pi * 2. * 1.j * t_sample),
+                                           dx=1. / self.stats['Fs']).real
+            else:
+                snapshot = self.data[0::resolution, t_sample]
         return snapshot
 
     def plot_snapshot(self, t, resolution=1, **kwargs):

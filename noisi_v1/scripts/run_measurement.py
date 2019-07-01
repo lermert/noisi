@@ -167,8 +167,8 @@ def measurement(source_config, mtype, step, ignore_net,
                 snr_a = snratio(tr_o, **_options_ac)
                 info.extend([msr_s, np.nan, msr, np.nan,
                              l2_so, snr, snr_a, tr_o.stats.sac.user0])
-                adjt *= (msr - msr_o)
-                adjoint_source[0].data += adjt
+                adjt *= (msr_s - msr_o)
+                adjoint_source[0].data = adjt
 
         measurements.loc[i] = info
 

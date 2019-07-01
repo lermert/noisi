@@ -4,7 +4,6 @@ import os
 import yaml
 from glob import glob
 from math import ceil
-from scipy.fftpack import next_fast_len
 from obspy import Trace
 from warnings import warn
 from noisi_v1 import NoiseSource, WaveField
@@ -18,9 +17,9 @@ try:
 except ImportError:
     pass
 # prepare embarrassingly parallel run:
-    comm = MPI.COMM_WORLD
-    size = comm.Get_size()
-    rank = comm.Get_rank()
+comm = MPI.COMM_WORLD
+size = comm.Get_size()
+rank = comm.Get_rank()
 
 
 class config_params(object):
@@ -193,10 +192,10 @@ def get_ns(all_conf, insta=False):
         with WaveField(any_wavefield) as wf1:
             nt = int(wf1.stats['nt'])
             Fs = round(wf1.stats['Fs'], 8)
-
-    # Necessary length of zero padding
-    # for carrying out frequency domain correlations/convolutions
-    n = next_fast_len(2 * nt - 1)
+            n = wf1.stats['npad']
+    # # Necessary length of zero padding
+    # # for carrying out frequency domain correlations/convolutions
+    # n = next_fast_len(2 * nt - 1)
 
     # Number of time steps for synthetic correlation
     n_lag = int(all_conf.source_config['max_lag'] * Fs)
@@ -284,15 +283,20 @@ def compute_correlation(input_files, all_conf, nsrc, all_ns, taper,
                                     dt=1. / Fs)[0].data * taper
             s1 = np.ascontiguousarray(s1)
             s2 = np.ascontiguousarray(s2)
+            spec1 = np.fft.rfft(s1, n)
+            spec2 = np.fft.rfft(s2, n)
 
         else:
-            # read Green's functions
-            s1 = np.ascontiguousarray(wf1.data[i, :] * taper)
-            s2 = np.ascontiguousarray(wf2.data[i, :] * taper)
-
-        # Fourier transform for greater ease of convolution
-        spec1 = np.fft.rfft(s1, n)
-        spec2 = np.fft.rfft(s2, n)
+            if not wf1.fdomain:
+                # read Green's functions
+                s1 = np.ascontiguousarray(wf1.data[i, :] * taper)
+                s2 = np.ascontiguousarray(wf2.data[i, :] * taper)
+                # Fourier transform for greater ease of convolution
+                spec1 = np.fft.rfft(s1, n)
+                spec2 = np.fft.rfft(s2, n)
+            else:
+                spec1 = np.ascontiguousarray(wf1.data[i, :])
+                spec2 = np.ascontiguousarray(wf2.data[i, :])
 
         # convolve G1G2
         g1g2_tr = np.multiply(np.conjugate(spec1), spec2)

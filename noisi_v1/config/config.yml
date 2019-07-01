@@ -13,6 +13,7 @@
     "wavefield_type": "analytic",
     "wavefield_point_force": 1.0e6,
     "wavefield_path": "x",
+    "wavefield_domain": "time",
     "wavefield_sampling_rate": 1.0,
     "wavefield_filter": [0.01, 0.2],
     "wavefield_channel": "Z"

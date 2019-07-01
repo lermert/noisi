@@ -2,7 +2,6 @@ from __future__ import print_function
 from mpi4py import MPI
 import numpy as np
 import os
-import yaml
 from glob import glob
 from math import ceil
 
@@ -20,9 +19,9 @@ except ImportError:
     pass
 
 # prepare embarrassingly parallel run:
-    comm = MPI.COMM_WORLD
-    size = comm.Get_size()
-    rank = comm.Get_rank()
+comm = MPI.COMM_WORLD
+size = comm.Get_size()
+rank = comm.Get_rank()
 
 
 def add_input_files(kp, all_conf, insta=False):
@@ -178,22 +177,27 @@ def compute_kernel(input_files, all_conf, nsrc, all_ns, taper,
             s2 = db.get_seismograms(source=fsrc, receiver=rec2,
                                     dt=dt)[0].data * taper
             s2 = np.ascontiguousarray(s2)
+            spec1 = np.fft.rfft(s1, n)
+            spec2 = np.fft.rfft(s2, n)
 
         else:
-            s1 = np.ascontiguousarray(wf1.data[i, :] * taper)
-            s2 = np.ascontiguousarray(wf2.data[i, :] * taper)
-
-        spec1 = np.fft.rfft(s1, n)
-        spec2 = np.fft.rfft(s2, n)
+            if not wf1.fdomain:
+                s1 = np.ascontiguousarray(wf1.data[i, :] * taper)
+                s2 = np.ascontiguousarray(wf2.data[i, :] * taper)
+                spec1 = np.fft.rfft(s1, n)
+                spec2 = np.fft.rfft(s2, n)
+            else:
+                spec1 = wf1.data[i, :]
+                spec2 = wf2.data[i, :]
 
         g1g2_tr = np.multiply(np.conjugate(spec1), spec2)
+        # spectrum -- to be replaced by spectral basis function
         c = np.multiply(g1g2_tr, S)
-
     #######################################################################
     # Get Kernel at that location
     #######################################################################
         corr_temp = my_centered(np.fft.ifftshift(np.fft.irfft(c, n)),
-                                n_corr)
+                                n_corr) * nsrc.surf_area[i]
 
     #######################################################################
     # Apply the 'adjoint source'
@@ -210,7 +214,6 @@ def compute_kernel(input_files, all_conf, nsrc, all_ns, taper,
 
         if i % print_each_n == 0 and all_conf.config['verbose']:
             print("Finished {} of {} source locations.".format(i, ntraces))
-
     if not insta:
         wf1.file.close()
         wf2.file.close()
@@ -281,8 +284,7 @@ def run_kern(args):
     # Current model for the noise source
     nsrc = os.path.join(all_conf.source_config['project_path'],
                         all_conf.source_config['source_name'],
-                        'iteration_' + str(all_conf.step),
-                        'starting_model.h5')
+                        'spectral_model.h5')
 
     # Smart numbers
     all_ns = get_ns(all_conf)  # ntime, n, n_corr, Fs

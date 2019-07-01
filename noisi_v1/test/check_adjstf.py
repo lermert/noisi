@@ -9,7 +9,7 @@ from noisi_v1.scripts import adjnt_functs as af
 # input:
 # *********************************************
 steps = np.arange(-14, 0, 0.1)
-mtype = 'windowed_waveform'
+mtype = 'ln_energy_ratio'
 sacdict = {'dist': 1e6}
 g_speed = 3700.
 window_params = {}

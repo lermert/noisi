@@ -5,8 +5,6 @@ try:
 except ImportError:
     print('Plotting unavailable, is basemap installed?')
 
-from noisi_v1.util.geo import get_spherical_surface_elements
-
 
 class NoiseSource(object):
 
@@ -50,7 +48,7 @@ class NoiseSource(object):
 
         # return one spectrum in location with index iloc
         return np.dot(self.distr_basis[iloc, :],
-                      self.spect_basis) * self.surf_area[iloc]
+                      self.spect_basis)
 
     def plot(self, **options):
 

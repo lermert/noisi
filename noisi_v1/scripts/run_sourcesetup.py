@@ -6,7 +6,6 @@ import time
 from glob import glob
 import os
 import io
-from scipy.fftpack import next_fast_len
 import errno
 from noisi_v1 import WaveField
 from noisi_v1.util.geo import is_land, geographical_distances
@@ -125,6 +124,7 @@ and measr_config.yml to source model directory, please edit and rerun.")
         # load the source locations of the grid
         grd = np.load(os.path.join(conf['project_path'],
                                    'sourcegrid.npy'))
+
         # add the approximate spherical surface elements
         if grd.shape[-1] < 50000:
             surf_el = get_spherical_surface_elements(grd[0], grd[1])
@@ -133,18 +133,16 @@ and measr_config.yml to source model directory, please edit and rerun.")
 approximate surface elements.')
             surf_el = np.ones(grd.shape[-1]) * conf['grid_dx'] ** 2
 
+        # get the relevant array sizes
         wfs = glob(os.path.join(conf['project_path'], 'greens', '*.h5'))
         if wfs != [] and conf['verbose']:
             print('Found wavefield.')
         else:
             raise FileNotFoundError('No wavefield database found. Run \
 precompute_wavefield first.')
-
         with WaveField(wfs[0]) as wf:
             df = wf.stats['Fs']
-            nt = wf.stats['nt']
-
-        n = next_fast_len(2 * nt - 1)
+            n = wf.stats['npad']
         freq = np.fft.rfftfreq(n, d=1. / df)
         n_distr = len(parameter_sets)
         coeffs = np.zeros((grd.shape[-1], n_distr))
@@ -155,8 +153,7 @@ precompute_wavefield first.')
             coeffs[:, i] = self.distribution_from_parameters(grd,
                                                              parameter_sets[i],
                                                              conf['verbose'])
-            if not parameter_sets[i]['distribution'] == 'gaussian_blob':
-                coeffs[:, i] /= surf_el
+
             # plot
             outfile = os.path.join(args.source_model,
                                    'source_starting_model_distr%g.png' % i)
@@ -183,11 +180,26 @@ precompute_wavefield first.')
                                     'starting_model.h5'), 'w') as fh:
             fh.create_dataset('coordinates', data=grd)
             fh.create_dataset('frequencies', data=freq)
-            fh.create_dataset('model', data=coeffs.astype(np.float32))
+            fh.create_dataset('model', data=coeffs.astype(np.float))
             fh.create_dataset('spectral_basis',
-                              data=spectra.astype(np.float32))
+                              data=spectra.astype(np.float))
             fh.create_dataset('surface_areas',
-                              data=surf_el.astype(np.float32))
+                              data=surf_el.astype(np.float))
+
+        uniform_spatial = np.ones(coeffs.shape)
+        for ix_distr in range(n_distr):
+            uniform_spatial[:, ix_distr] *= float(parameter_sets[i]['weight'])
+
+        # Save to an hdf5 file
+        with h5py.File(os.path.join(args.source_model,
+                                    'spectral_model.h5'), 'w') as fh:
+            fh.create_dataset('coordinates', data=grd)
+            fh.create_dataset('frequencies', data=freq)
+            fh.create_dataset('model', data=uniform_spatial.astype(np.float))
+            fh.create_dataset('spectral_basis',
+                              data=spectra.astype(np.float))
+            fh.create_dataset('surface_areas',
+                              data=surf_el.astype(np.float))
 
     def distribution_from_parameters(self, grd, parameters, verbose=False):
 
@@ -195,15 +207,13 @@ precompute_wavefield first.')
             if verbose:
                 print('homogeneous distribution')
             distribution = np.ones(grd.shape[-1])
-            distribution /= grd.shape[-1]
-            return(distribution)
+            return(parameters['weight'] * distribution)
 
         elif parameters['distribution'] == 'ocean':
             if verbose:
                 print('ocean-only distribution')
             is_ocean = np.abs(is_land(grd[0], grd[1]) - 1.)
-            distribution = is_ocean / is_ocean.sum()
-            return(distribution)
+            return(parameters['weight'] * is_ocean)
 
         elif parameters['distribution'] == 'gaussian_blob':
             if verbose:
@@ -220,9 +230,8 @@ precompute_wavefield first.')
             if parameters['only_in_the_ocean']:
                 is_ocean = np.abs(is_land(grd[0], grd[1]) - 1.)
                 blob *= is_ocean
-                blob *= (grd.shape[-1] / is_ocean.sum())
 
-            return(blob)
+            return(parameters['weight'] * blob)
 
     def spectrum_from_parameters(self, freq, parameters):
 
@@ -232,6 +241,5 @@ precompute_wavefield first.')
         spec = taper * np.exp(-((freq - mu) ** 2) /
                               (2 * sig ** 2))
         spec = spec / (sig * sqrt(2. * pi))
-        spec *= parameters['weight']
 
         return(spec)

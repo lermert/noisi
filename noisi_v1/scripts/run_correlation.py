@@ -200,13 +200,15 @@ def g1g2_corr(wf1, wf2, corr_file, src, source_conf, insta=False):
                 s2 = np.ascontiguousarray(s2)
 
             else:
-                # read Green's functions
-                s1 = np.ascontiguousarray(wf1.data[i, :] * taper)
-                s2 = np.ascontiguousarray(wf2.data[i, :] * taper)
-
-            # Fourier transform for greater ease of convolution
-            spec1 = np.fft.rfft(s1, n)
-            spec2 = np.fft.rfft(s2, n)
+                if not wf1.fdomain:
+                    # read Green's functions
+                    s1 = np.ascontiguousarray(wf1.data[i, :] * taper)
+                    s2 = np.ascontiguousarray(wf2.data[i, :] * taper)
+                    # Fourier transform for greater ease of convolution
+                    spec1 = np.fft.rfft(s1, n)
+                    spec2 = np.fft.rfft(s2, n)
+                else:
+                    pass
 
             # convolve G1G2
             g1g2_tr = np.multiply(np.conjugate(spec1), spec2)
