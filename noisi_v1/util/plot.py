@@ -29,7 +29,8 @@ def plot_grid(map_x, map_y, map_z, stations=[], v=None, globe=False,
               sequential=False, v_min=None, normalize=False,
               coastres='110m', proj=ccrs.PlateCarree, quant_unit='PSD (m/s^2)',
               lat_0=None, lon_0=None, lon_min=None, lon_max=None,
-              lat_min=None, lat_max=None, resol=1, alpha=1.0, size=None):
+              lat_min=None, lat_max=None, resol=1, alpha=1.0, size=None,
+              axes=None):
 
     if lat_0 is None:
         lat_0 = 0.5 * (map_y.max() - map_y.min())
@@ -50,12 +51,14 @@ def plot_grid(map_x, map_y, map_z, stations=[], v=None, globe=False,
         map_y = map_y[::resol]
         map_z = map_z[::resol]
 
-    fig = plt.figure(figsize=(11, 9))
-    ax = fig.add_subplot(1, 1, 1, projection=proj())
+    if axes is None:
+        fig = plt.figure(figsize=(11, 9))
+        ax = fig.add_subplot(1, 1, 1, projection=proj())
+        nice_map(ax, lat_min, lat_max, lon_min, lon_max, proj=proj)
+    else:
+        ax = axes
     if title is not None:
         plt.title(title)
-
-    nice_map(ax, lat_min, lat_max, lon_min, lon_max, proj=proj)
 
     if normalize:
         map_z /= np.abs(map_z).max()
@@ -73,20 +76,23 @@ def plot_grid(map_x, map_y, map_z, stations=[], v=None, globe=False,
     scplt = ax.scatter(map_x, map_y, c=map_z, alpha=alpha, marker='.',
                        cmap=cmap, s=size, vmin=v_min, vmax=v,
                        transform=ccrs.PlateCarree())
-    cbar = plt.colorbar(scplt)
-    cbar.ax.get_yaxis().labelpad = 15
-    cbar.set_label(quant_unit, rotation=270)
-    ax.coastlines(resolution=coastres, linewidth=1.)
+
+    if axes is None:
+        cbar = plt.colorbar(scplt)
+        cbar.ax.get_yaxis().labelpad = 15
+        cbar.set_label(quant_unit, rotation=270)
+        ax.coastlines(resolution=coastres, linewidth=1.)
 
     # draw station locations
     for sta in stations:
         ax.plot(sta[1], sta[0], '^', color='r', markersize=0.5 * size)
 
-    if outfile is None:
-        plt.show()
-    else:
-        plt.savefig(outfile, dpi=300.)
-        plt.close()
+    if axes is None:
+        if outfile is None:
+            plt.show()
+        else:
+            plt.savefig(outfile, dpi=300.)
+            plt.close()
 
 
 def plot_sourcegrid(gridpoints, coastres='110m', size=None,

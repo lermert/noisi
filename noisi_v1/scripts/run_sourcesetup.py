@@ -226,6 +226,8 @@ precompute_wavefield first.')
             # important: Use sigma in m because the surface elements are in m
             norm_factor = 1. / ((sigma_km * 1000.) ** 2 * 2. * np.pi)
             blob *= norm_factor
+            if parameters['normalize']:
+                blob /= blob.max()
 
             if parameters['only_in_the_ocean']:
                 is_ocean = np.abs(is_land(grd[0], grd[1]) - 1.)

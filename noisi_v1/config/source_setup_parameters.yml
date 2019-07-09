@@ -25,3 +25,4 @@
   only_in_the_ocean: true
   weight: 1.0
   taper_percent: 1.0
+  normalize: true

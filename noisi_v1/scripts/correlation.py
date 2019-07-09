@@ -199,8 +199,8 @@ def get_ns(all_conf, insta=False):
 
     # Number of time steps for synthetic correlation
     n_lag = int(all_conf.source_config['max_lag'] * Fs)
-    if nt - 2 * n_lag <= 0:
-        n_lag = nt // 2
+    if nt - n_lag <= 0:
+        n_lag = nt
         warn('Resetting maximum lag to %g seconds:\
  Synthetics are too short for %g seconds.' % (n_lag / Fs, n_lag / Fs))
 
