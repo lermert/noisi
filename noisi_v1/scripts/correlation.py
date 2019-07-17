@@ -1,4 +1,4 @@
-from mpi4py import MPI
+# from mpi4py import MPI
 import numpy as np
 import os
 import yaml
@@ -17,15 +17,15 @@ try:
 except ImportError:
     pass
 # prepare embarrassingly parallel run:
-comm = MPI.COMM_WORLD
-size = comm.Get_size()
-rank = comm.Get_rank()
+# comm = MPI.COMM_WORLD
+# size = comm.Get_size()
+# rank = comm.Get_rank()
 
 
 class config_params(object):
     """collection of input parameters"""
 
-    def __init__(self, args):
+    def __init__(self, args, comm, size, rank):
         self.args = args
         source_configfile = os.path.join(self.args.source_model,
                                          'source_config.yml')
@@ -87,12 +87,12 @@ def add_input_files(cp, all_conf, insta=False):
     return(wf1, wf2)
 
 
-def define_correlation_tasks(all_conf):
+def define_correlation_tasks(all_conf, comm, size, rank):
 
     p = define_correlationpairs(all_conf.source_config
                                 ['project_path'],
                                 all_conf.auto_corr)
-    if rank == 0:
+    if rank == 0 and all_conf.config['verbose']:
         print('Nr all possible correlation pairs %g ' % len(p))
 
     # Remove pairs for which no observation is available
@@ -125,13 +125,13 @@ def define_correlation_tasks(all_conf):
 
         # broadcast p to all ranks
         p = comm.bcast(p, root=0)
-        if rank == 0:
+        if rank == 0 and all_conf.config['verbose']:
             print('Nr correlation pairs after checking available observ. %g '
                   % len(p))
 
     # Remove pairs that have already been calculated
     p = rem_fin_prs(p, all_conf.source_config, all_conf.step)
-    if rank == 0:
+    if rank == 0 and all_conf.config['verbose']:
         print('Nr correlation pairs after checking already calculated ones %g'
               % len(p))
         print(16 * '*')
@@ -199,10 +199,11 @@ def get_ns(all_conf, insta=False):
 
     # Number of time steps for synthetic correlation
     n_lag = int(all_conf.source_config['max_lag'] * Fs)
-    if nt - n_lag <= 0:
-        n_lag = nt
+    if nt - 2 * n_lag <= 0:
+        n_lag_old = n_lag
+        n_lag = nt // 2
         warn('Resetting maximum lag to %g seconds:\
- Synthetics are too short for %g seconds.' % (n_lag / Fs, n_lag / Fs))
+ Synthetics are too short for %g seconds.' % (n_lag / Fs, n_lag_old / Fs))
 
     n_corr = 2 * n_lag + 1
 
@@ -305,7 +306,7 @@ def compute_correlation(input_files, all_conf, nsrc, all_ns, taper,
         c = np.multiply(g1g2_tr, S)
 
         # transform back
-        correlation += my_centered(np.fft.ifftshift(np.fft.irfft(c, n)),
+        correlation += my_centered(np.fft.fftshift(np.fft.irfft(c, n)),
                                    n_corr) * nsrc.surf_area[i]
         # occasional info
         if i % print_each_n == 0 and all_conf.config['verbose']:
@@ -337,11 +338,12 @@ def add_metadata_and_write(correlation, sta1, sta2, output_file, Fs):
     return()
 
 
-def run_corr(args):
+def run_corr(args, comm, size, rank):
 
-    all_conf = config_params(args)
+    all_conf = config_params(args, comm, size, rank)
     # Distributing the tasks
-    correlation_tasks, n_p_p, n_p = define_correlation_tasks(all_conf)
+    correlation_tasks, n_p_p, n_p = define_correlation_tasks(all_conf,
+                                                             comm, size, rank)
     if len(correlation_tasks) == 0:
         return()
     if all_conf.config['verbose']:
@@ -371,7 +373,8 @@ def run_corr(args):
 
                 output_file = add_output_file(cp, all_conf)
             except (IndexError, FileNotFoundError):
-                warn('Could not determine correlation for: %s\
+                if all_conf.config['verbose']:
+                    print('Could not determine correlation for: %s\
     \nCheck if wavefield .h5 file is available.' % cp)
                 continue
 

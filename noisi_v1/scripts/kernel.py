@@ -1,5 +1,5 @@
 from __future__ import print_function
-from mpi4py import MPI
+# from mpi4py import MPI
 import numpy as np
 import os
 from glob import glob
@@ -8,7 +8,7 @@ from math import ceil
 from obspy import read, Stream
 from noisi_v1 import NoiseSource, WaveField
 from obspy.signal.invsim import cosine_taper
-from warnings import warn
+# from warnings import warn
 from noisi_v1.util.windows import my_centered
 from noisi_v1.util.geo import geograph_to_geocent
 from noisi_v1.util.corr_pairs import define_correlationpairs, rem_no_obs
@@ -19,9 +19,9 @@ except ImportError:
     pass
 
 # prepare embarrassingly parallel run:
-comm = MPI.COMM_WORLD
-size = comm.Get_size()
-rank = comm.Get_rank()
+# comm = MPI.COMM_WORLD
+# size = comm.Get_size()
+# rank = comm.Get_rank()
 
 
 def add_input_files(kp, all_conf, insta=False):
@@ -110,8 +110,10 @@ def compute_kernel(input_files, all_conf, nsrc, all_ns, taper,
                 f += read(adjtfile[0])[0]
                 f[-1].data = my_centered(f[-1].data, n_corr)
             except IndexError:
-                warn('No adjoint source found: {}\n'.format(a))
-
+                if all_conf.config['verbose']:
+                    print('No adjoint source found: {}\n'.format(a))
+                else:
+                    pass
         if len(f) > 0:
             adjt_srcs.append(f)
         else:
@@ -221,11 +223,11 @@ def compute_kernel(input_files, all_conf, nsrc, all_ns, taper,
     return kern
 
 
-def define_kernel_tasks(all_conf):
+def define_kernel_tasks(all_conf, comm, size, rank):
 
     p = define_correlationpairs(all_conf.source_config['project_path'],
                                 auto_corr=all_conf.auto_corr)
-    if rank == 0:
+    if rank == 0 and all_conf.config['verbose']:
         print('Nr all possible kernels %g ' % len(p))
 
     # Remove pairs for which no observation is available
@@ -254,7 +256,7 @@ def define_kernel_tasks(all_conf):
 
         # broadcast p to all ranks
         p = comm.bcast(p, root=0)
-        if rank == 0:
+        if rank == 0 and all_conf.config['verbose']:
             print('Nr kernels after checking available observ. %g ' % len(p))
 
     # The assignment of station pairs should be such that one core
@@ -267,12 +269,12 @@ def define_kernel_tasks(all_conf):
     return p_p, num_pairs, len(p)
 
 
-def run_kern(args):
+def run_kern(args, comm, size, rank):
 
     args.steplengthrun = False  # by default
-    all_conf = config_params(args)
+    all_conf = config_params(args, comm, size, rank)
 
-    kernel_tasks, n_p, n_p_p = define_kernel_tasks(all_conf)
+    kernel_tasks, n_p, n_p_p = define_kernel_tasks(all_conf, comm, size, rank)
     if len(kernel_tasks) == 0:
         return()
     if all_conf.config['verbose']:
@@ -300,7 +302,8 @@ def run_kern(args):
                 input_files = add_input_files(kp, all_conf)
                 output_file = add_output_file(kp, all_conf)
             except (IOError, IndexError):
-                warn('Could not find input for: %s\
+                if all_conf.config['verbose']:
+                    print('Could not find input for: %s\
 \nCheck if wavefield .h5 file and base_model file are available.' % kp)
                 continue
 

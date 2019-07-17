@@ -44,7 +44,8 @@ def measurement(source_config, mtype, step, ignore_net,
     options: g_speed,window_params (only needed if
     mtype is ln_energy_ratio or enery_diff)
     """
-
+    verbose = yaml.safe_load(open(os.path.join(source_config['project_path'],
+                                               'config.yml')))['verbose']
     step_n = 'iteration_{}'.format(int(step))
     step_dir = os.path.join(source_config['source_path'], step_n)
 
@@ -78,7 +79,8 @@ def measurement(source_config, mtype, step, ignore_net,
         try:
             tr_o = read(f)[0]
         except IOError:
-            print('\nCould not read data: ' + os.path.basename(f))
+            if verbose:
+                print('\nCould not read data: ' + os.path.basename(f))
             continue
 
         # Read synthetics
@@ -92,7 +94,8 @@ def measurement(source_config, mtype, step, ignore_net,
         try:
             tr_s = read(synth_filename)[0]
         except IOError:
-            print('\nCould not read synthetics: ' + synth_filename)
+            if verbose:
+                print('\nCould not read synthetics: ' + synth_filename)
             continue
 
         # Assigning stats to synthetics, cutting them to right length
@@ -192,7 +195,7 @@ def measurement(source_config, mtype, step, ignore_net,
     return measurements
 
 
-def run_measurement(args):
+def run_measurement(args, comm, size, rank):
 
     source_configfile = os.path.join(args.source_model, "source_config.yml")
     step = int(args.step)
@@ -204,6 +207,8 @@ def run_measurement(args):
     measr_configfile = os.path.join(source_config['source_path'],
                                     'measr_config.yml')
     measr_config = yaml.safe_load(open(measr_configfile))
+    configfile = os.path.join(source_config['project_path'], 'config.yml')
+    config = yaml.safe_load(open(configfile))
     mtype = measr_config['mtype']
     bandpass = measr_config['bandpass']
     step_n = 'iteration_{}'.format(int(step))
@@ -222,20 +227,23 @@ def run_measurement(args):
         bandpass = [None]
     if type(bandpass[0]) != list and bandpass[0] is not None:
             bandpass = [bandpass]
-            warn('\'Bandpass\' should be defined as list of filters.')
+            if config['verbose']:
+                warn('\'Bandpass\' should be defined as list of filters.')
 
     if type(window_params['hw']) != list:
         window_params['hw'] = [window_params['hw']]
 
     if len(window_params['hw']) != len(bandpass):
-        warn('Using the same window length for all measurements.')
+        if config['verbose']:
+            warn('Using the same window length for all measurements.')
         window_params['hw'] = len(bandpass) * [window_params['hw'][0]]
 
     if type(measr_config['g_speed']) in [float, int]:
-        warn('Using the same group velocity for all measurements.')
+        if config['verbose']:
+            warn('Using the same group velocity for all measurements.')
         g_speeds = len(bandpass) * [measr_config['g_speed']]
 
-    elif type(measr_config['g_speed']) == list \
+    elif type(measr_config['g_speed']) == list\
         and len(measr_config['g_speed']) == len(bandpass):
         g_speeds = measr_config['g_speed']
 

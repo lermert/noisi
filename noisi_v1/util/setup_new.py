@@ -5,7 +5,7 @@ import yaml
 import inspect
 
 
-def setup_proj(args):
+def setup_proj(args, comm, size, rank):
 
     project_name = args.project_name
     os.makedirs(os.path.join(project_name))

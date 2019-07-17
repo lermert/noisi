@@ -27,7 +27,7 @@ def my_centered(arr, newsize):
     return newarr
 
 
-def window_checks(i0, i1, i2, i3, n, win_overlap):
+def window_checks(i0, i1, i2, i3, n, win_overlap, verbose=False):
 
     if n % 2 == 0:
         print('Correlation length must be 2*n+1, otherwise arbitrary middle \
@@ -40,15 +40,18 @@ sample. This correlation has length 2*n.')
 skip these correlations.'
         warn(msg)
     elif i0 < n / 2 - 1 and not win_overlap:
-        print('Windows overlap, skipping...')
+        if verbose:
+            print('Windows overlap, skipping...')
         return(False)
 
     # Out of bounds?
     if i0 < 0 or i1 > n:
-        print('\nNo windows found: Time series is too short.')
+        if verbose:
+            print('\nNo windows found: Time series is too short.')
         return(False)
     elif i2 < 0 or i3 > n:
-        print('\nNo windows found: Noise window not covered by data.')
+        if verbose:
+            print('\nNo windows found: Noise window not covered by data.')
         return(False)
 
     return(True)

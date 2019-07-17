@@ -18,7 +18,7 @@ from warnings import warn
 
 class source_setup(object):
 
-    def __init__(self, args):
+    def __init__(self, args, comm, size, rank):
 
         if os.path.exists(args.source_model):
             self.setup_source_startingmodel(args)
@@ -135,8 +135,11 @@ approximate surface elements.')
 
         # get the relevant array sizes
         wfs = glob(os.path.join(conf['project_path'], 'greens', '*.h5'))
-        if wfs != [] and conf['verbose']:
-            print('Found wavefield.')
+        if wfs != []:
+            if conf['verbose']:
+                print('Found wavefield.')
+            else:
+                pass
         else:
             raise FileNotFoundError('No wavefield database found. Run \
 precompute_wavefield first.')

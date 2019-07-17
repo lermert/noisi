@@ -25,7 +25,7 @@ def create_sourcegrid(config):
     return sources
 
 
-def setup_sourcegrid(args):
+def setup_sourcegrid(args, comm, size, rank):
     configfile = os.path.join(args.project_path, 'config.yml')
     with io.open(configfile, 'r') as fh:
         config = yaml.safe_load(fh)

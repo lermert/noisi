@@ -1,4 +1,5 @@
 import argparse
+from mpi4py import MPI
 from noisi_v1.scripts.source_grid import setup_sourcegrid as setup_sgrid
 from noisi_v1.util.setup_new import setup_proj
 # from noisi_v1.scripts.run_correlation import run_corr
@@ -8,9 +9,15 @@ from noisi_v1.scripts.run_sourcesetup import source_setup
 from noisi_v1.scripts.run_measurement import run_measurement
 from noisi_v1.scripts.kernel import run_kern
 
+# simple embarrassingly parallel run:
+comm = MPI.COMM_WORLD
+size = comm.Get_size()
+rank = comm.Get_rank()
 
-def hello(args):
-    print('Noisi Version 1. Type noisi -h for more information.\n')
+
+def hello(args, comm, size, rank):
+    if rank == 0:
+        print('Noisi Version 1. Type noisi -h for more information.\n')
 
 
 parser = argparse.ArgumentParser(description='Noise cross-correlation tool.')
@@ -42,8 +49,8 @@ parser_setup_sourcegrid.set_defaults(func=setup_sgrid)
 # ###########################################################################
 
 
-def precompute_wavefield(args):
-    pw = precomp_wavefield(args)
+def precompute_wavefield(args, comm, size, rank):
+    pw = precomp_wavefield(args, comm, size, rank)
     pw.precompute()
 
 
@@ -139,4 +146,4 @@ def run():
     Main routine for noise correlation modeling and noise source inversion.
     """
     args = parser.parse_args()
-    args.func(args)
+    args.func(args, comm, size, rank)

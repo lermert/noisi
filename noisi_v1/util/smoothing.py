@@ -1,13 +1,13 @@
 import numpy as np
 from math import sqrt, pi
 import sys
-from mpi4py import MPI
+# from mpi4py import MPI
 # Gaussian convolution, determining the distance
 # in cartesian coordinates.
-# initialize parallel comm
-comm = MPI.COMM_WORLD
-size = comm.Get_size()
-rank = comm.Get_rank()
+# # initialize parallel comm
+# comm = MPI.COMM_WORLD
+# size = comm.Get_size()
+# rank = comm.Get_rank()
 
 
 def get_distance(gridx, gridy, gridz, x, y, z):
@@ -45,7 +45,7 @@ def smooth_gaussian(values, coords, rank, size, sigma, r=6371000.,
 
 
 def apply_smoothing_sphere(rank, size, values, coords, sigma, cap,
-                           threshold):
+                           threshold, comm):
 
     sigma = float(sigma)
     cap = float(cap)
@@ -75,13 +75,16 @@ def apply_smoothing_sphere(rank, size, values, coords, sigma, cap,
         return(v_s)
 
 
-def smooth(inputfile, outputfile, coordfile, sigma, cap, thresh):
+def smooth(inputfile, outputfile, coordfile, sigma, cap, thresh, comm, size,
+           rank):
 
     for ixs in range(len(sigma)):
         sigma[ixs] = float(sigma[ixs])
 
     coords = np.load(coordfile)
     values = np.array(np.load(inputfile), ndmin=2)
+    if values.shape[0] > values.shape[-1]:
+        values = np.transpose(values)
     smoothed_values = np.zeros(values.shape)
 
     for i in range(values.shape[0]):
@@ -93,16 +96,19 @@ def smooth(inputfile, outputfile, coordfile, sigma, cap, thresh):
             sig = sigma[-1]
 
         v = apply_smoothing_sphere(rank, size, array_in,
-                                   coords, sig, cap, threshold=thresh)
+                                   coords, sig, cap, threshold=thresh,
+                                   comm=comm)
         if rank == 0:
             smoothed_values[i, :] = v
             print(np.isnan(smoothed_values).sum())
 
-    if rank == 0:
-        if outputfile is not None:
+    if outputfile is not None:
+        if rank == 0:
             np.save(outputfile, smoothed_values)
             return()
         else:
+            return()
+    else:
             return(smoothed_values)
 
 

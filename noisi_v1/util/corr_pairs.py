@@ -113,7 +113,7 @@ def rem_fin_prs(stapairs, source_conf, step):
 
 def get_synthetics_filename(obs_filename, dir, synth_location='',
                             fileformat='sac', synth_channel_basename='??',
-                            ignore_network=True):
+                            ignore_network=True, verbose=False):
 
     inf = obs_filename.split('--')
 
@@ -159,8 +159,11 @@ def get_synthetics_filename(obs_filename, dir, synth_location='',
             try:
                 sfilename = glob(os.path.join(dir, synth_filename2))[0]
             except IndexError:
-                print('No synthetic file found for data:')
-                print(obs_filename)
+                if verbose:
+                    print('No synthetic file found for data:')
+                    print(obs_filename)
+                else:
+                    pass
 
     else:
         synth_filename1 = '{}.{}.{}.{}--{}.{}.{}.{}.{}'.format(net1, sta1,
@@ -175,8 +178,11 @@ def get_synthetics_filename(obs_filename, dir, synth_location='',
             sfilename = glob(os.path.join(dir, synth_filename1))[0]
 
         except IndexError:
-            print('No synthetic file found for data:')
-            print(obs_filename)
+            if verbose:
+                print('No synthetic file found for data:')
+                print(obs_filename)
+            else:
+                pass
 
     return sfilename
 

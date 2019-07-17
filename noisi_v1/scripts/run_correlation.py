@@ -1,4 +1,4 @@
-from mpi4py import MPI
+# from mpi4py import MPI
 import numpy as np
 import os
 import yaml
@@ -251,17 +251,12 @@ def g1g2_corr(wf1, wf2, corr_file, src, source_conf, insta=False):
         trace.write(filename=corr_file, format='SAC')
 
 
-def run_corr(args):
+def run_corr(args, comm, size, rank):
 
     source_configfile = os.path.join(args.source_model, 'source_config.yml')
     step = int(args.step)
     steplengthrun = args.steplengthrun
     ignore_network = args.ignore_network
-
-    # simple embarrassingly parallel run:
-    comm = MPI.COMM_WORLD
-    size = comm.Get_size()
-    rank = comm.Get_rank()
 
     # get configuration
     source_config = yaml.safe_load(open(source_configfile))

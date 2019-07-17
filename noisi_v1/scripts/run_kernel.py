@@ -230,7 +230,7 @@ def g1g2_kern(wf1str, wf2str, kernel, adjt, src, source_conf, insta=False):
         #######################################################################
         # Get Kernel at that location
         #######################################################################
-            corr_temp = my_centered(np.fft.ifftshift(np.fft.irfft(c, n)),
+            corr_temp = my_centered(np.fft.fftshift(np.fft.irfft(c, n)),
                                     n_corr)
 
         #######################################################################

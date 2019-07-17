@@ -17,9 +17,9 @@ try:
     import instaseis
 except ImportError:
     pass
-comm = MPI.COMM_WORLD
-size = comm.Get_size()
-rank = comm.Get_rank()
+# comm = MPI.COMM_WORLD
+# size = comm.Get_size()
+# rank = comm.Get_rank()
 
 
 class precomp_wavefield(object):
@@ -29,9 +29,11 @@ class precomp_wavefield(object):
     Green's functions. See noisi docs for details.
     """
 
-    def __init__(self, args):
+    def __init__(self, args, comm, size, rank):
 
         self.args = args
+        self.rank = rank
+        self.size = size
         # add configuration
         configfile = os.path.join(args.project_path, 'config.yml')
         with io.open(configfile, 'r') as fh:
@@ -70,10 +72,10 @@ class precomp_wavefield(object):
 
     def precompute(self):
         stations = list(self.stations.iterrows())
-        for i, station in stations[rank: len(self.stations): size]:
+        for i, station in stations[self.rank: len(self.stations): self.size]:
             self.function(station)
 
-        if rank == 0:
+        if self.rank == 0:
             wfile = glob(os.path.join(self.args.project_path,
                                       'greens', '*' +
                                       station['sta'] + '.*.h5'))[0]
