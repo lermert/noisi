@@ -1,10 +1,13 @@
 import numpy as np
 from math import pi, sin, cos, sqrt
-import cartopy.io.shapereader as shpreader
 from obspy.geodetics import gps2dist_azimuth
-import shapely.geometry as sgeom
-from shapely.ops import unary_union
-from shapely.prepared import prep
+try:
+    import cartopy.io.shapereader as shpreader
+    import shapely.geometry as sgeom
+    from shapely.ops import unary_union
+    from shapely.prepared import prep
+except ImportError:
+    pass
 from warnings import warn
 
 
@@ -21,6 +24,8 @@ def geographical_distances(grid, location):
 
 def is_land(x, y, res="110m"):
 
+    if prep not in locals():
+        raise ImportError("cartopy is needed to design ocean-only source.")
     assert(res in ["10m", "50m", "110m"]), "Resolution must be 10m, 50m, 110 m"
 
     land_shp_fname = shpreader.natural_earth(resolution=res,

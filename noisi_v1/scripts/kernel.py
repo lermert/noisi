@@ -274,7 +274,7 @@ def run_kern(args, comm, size, rank):
     args.steplengthrun = False  # by default
     all_conf = config_params(args, comm, size, rank)
 
-    kernel_tasks, n_p, n_p_p = define_kernel_tasks(all_conf, comm, size, rank)
+    kernel_tasks, n_p_p, n_p = define_kernel_tasks(all_conf, comm, size, rank)
     if len(kernel_tasks) == 0:
         return()
     if all_conf.config['verbose']:

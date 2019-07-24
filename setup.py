@@ -31,12 +31,13 @@ setup(
                   'config/source_config_comments.txt']},
     install_requires = [
         "obspy>=1.0.1",
-        "scipy>=0.16.0",
-        "cartopy",
+        "scipy>=1.2.0",
         "geographiclib",
         "mpi4py>=2.0.0",
         "pandas",
-        "h5py"],
+        "cartopy",
+        "h5py",
+        "PyYaml"],
     entry_points = {
         'console_scripts': [
             'noisi = noisi_v1.main:run'

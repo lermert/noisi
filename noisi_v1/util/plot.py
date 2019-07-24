@@ -111,8 +111,8 @@ def plot_sourcegrid(gridpoints, coastres='110m', size=None,
 
     if size is None:
         size = 100. * abs(gridpoints[0, 1] - gridpoints[0, 0])
-    ax.scatter(gridpoints[0], gridpoints[1], s=size, marker='.', **kwargs,
-               transform=ccrs.PlateCarree())
+    ax.scatter(gridpoints[0], gridpoints[1], s=size, marker='.',
+               transform=ccrs.PlateCarree(), **kwargs)
     ax.coastlines(resolution=coastres)
 
     if outfile is None:

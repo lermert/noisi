@@ -1,8 +1,10 @@
 from __future__ import print_function
 import numpy as np
 import h5py
-from noisi_v1.util import plot
-
+try:
+    from noisi_v1.util import plot
+except ImportError:
+    pass
 from noisi_v1.util import filter
 try:
     from scipy.signal import sosfilt
@@ -196,6 +198,10 @@ resetting to last sample.')
         return snapshot
 
     def plot_snapshot(self, t, resolution=1, **kwargs):
+
+        if 'plot' not in locals():
+            print("Cannot plot, is cartopy installed?")
+            return()
 
         if self.sourcegrid is None:
             msg = 'Must have a source grid to plot a snapshot.'

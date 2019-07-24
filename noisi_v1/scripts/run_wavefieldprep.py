@@ -216,7 +216,7 @@ class precomp_wavefield(object):
 Choose DIS, VEL or ACC in configuration.')
 
                 if self.filter is not None:
-                    trace = lfilter(*self.filter, values[c_index].data)
+                    trace = lfilter(*self.filter, x=values[c_index].data)
                 else:
                     trace = values[c_index].data
 
@@ -304,7 +304,7 @@ Choose DIS, VEL or ACC in configuration.')
 
                 # apply a filter if asked for
                 if self.filter is not None:
-                        trace = lfilter(*self.filter, s)
+                        trace = lfilter(*self.filter, x=s)
 
                 if self.fdomain:
                     f['data'][i, :] = np.fft.rfft(trace, n=self.npad)

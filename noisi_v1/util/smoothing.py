@@ -32,14 +32,12 @@ def smooth_gaussian(values, coords, rank, size, sigma, r=6371000.,
     v_smooth = np.zeros(values.shape)
 
     a = 1. / (sigma * sqrt(2. * pi))
-
     for i in range(rank, len(values), size):
         xp, yp, zp = (x[i], y[i], z[i])
         dist = get_distance(x, y, z, xp, yp, zp)
         weight = a * np.exp(-(dist) ** 2 / (2 * sigma ** 2))
         idx = weight >= threshold
-
-    v_smooth[i] = np.sum(np.multiply(weight[idx], values[idx])) / idx.sum()
+        v_smooth[i] = np.sum(np.multiply(weight[idx], values[idx])) / idx.sum()
 
     return v_smooth
 
@@ -63,15 +61,14 @@ def apply_smoothing_sphere(rank, size, values, coords, sigma, cap,
     comm.barrier()
 
     # collect the values
-    print('Gathering...')
     v_s_all = comm.gather(v_s, root=0)
     # rank 0: save the values
     if rank == 0:
         print('Gathered.')
         v_s = np.zeros(v_s.shape)
         for i in range(size):
-
             v_s += v_s_all[i]
+            print('max, median', v_s.max(), np.median(v_s))
         return(v_s)
 
 
@@ -86,9 +83,7 @@ def smooth(inputfile, outputfile, coordfile, sigma, cap, thresh, comm, size,
     if values.shape[0] > values.shape[-1]:
         values = np.transpose(values)
     smoothed_values = np.zeros(values.shape)
-
     for i in range(values.shape[0]):
-
         array_in = values[i, :]
         try:
             sig = sigma[i]
@@ -98,9 +93,12 @@ def smooth(inputfile, outputfile, coordfile, sigma, cap, thresh, comm, size,
         v = apply_smoothing_sphere(rank, size, array_in,
                                    coords, sig, cap, threshold=thresh,
                                    comm=comm)
+        comm.barrier()
+
         if rank == 0:
             smoothed_values[i, :] = v
-            print(np.isnan(smoothed_values).sum())
+
+    comm.barrier()
 
     if outputfile is not None:
         if rank == 0:

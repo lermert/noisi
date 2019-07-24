@@ -3,7 +3,10 @@ import yaml
 import os
 import io
 from noisi_v1.util.geo import points_on_ell
-from noisi_v1.util.plot import plot_sourcegrid
+try:
+    from noisi_v1.util.plot import plot_sourcegrid
+except ImportError:
+    pass
 import cartopy.crs as ccrs
 
 
@@ -34,9 +37,13 @@ def setup_sourcegrid(args, comm, size, rank):
     sourcegrid = create_sourcegrid(config)
 
     # plot
-    plot_sourcegrid(sourcegrid, outfile=os.path.join(config['project_path'],
-                                                     'sourcegrid.png'),
-                    proj=ccrs.PlateCarree)
+    try:
+        plot_sourcegrid(sourcegrid,
+                        outfile=os.path.join(config['project_path'],
+                                             'sourcegrid.png'),
+                        proj=ccrs.PlateCarree)
+    except NameError:
+        pass
 
     # write to .npy
     np.save(grid_filename, sourcegrid)

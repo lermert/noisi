@@ -10,7 +10,10 @@ import errno
 from noisi_v1 import WaveField
 from noisi_v1.util.geo import is_land, geographical_distances
 from noisi_v1.util.geo import get_spherical_surface_elements
-from noisi_v1.util.plot import plot_grid
+try:
+    from noisi_v1.util.plot import plot_grid
+except ImportError:
+    pass
 import matplotlib.pyplot as plt
 from math import pi, sqrt
 from warnings import warn
@@ -160,24 +163,30 @@ precompute_wavefield first.')
             # plot
             outfile = os.path.join(args.source_model,
                                    'source_starting_model_distr%g.png' % i)
-            plot_grid(grd[0], grd[1], coeffs[:, i],
-                      outfile=outfile, cmap=colors_cmaps[i],
-                      sequential=True, normalize=False,
-                      quant_unit='Spatial weight (-)')
+            if 'plot_grid' in locals():
+                plot_grid(grd[0], grd[1], coeffs[:, i],
+                          outfile=outfile, cmap=colors_cmaps[i],
+                          sequential=True, normalize=False,
+                          quant_unit='Spatial weight (-)')
 
             spectra[i, :] = self.spectrum_from_parameters(freq,
                                                           parameter_sets[i])
 
         # plotting the spectra
-        fig1 = plt.figure()
-        ax = fig1.add_subplot('111')
-        for i in range(n_distr):
-            ax.plot(freq, spectra[i, :] / spectra.max(), color=colors[i])
+        # plotting is not necessarily done to make sure code runs on clusters
+        try:
+            fig1 = plt.figure()
+            ax = fig1.add_subplot('111')
+            for i in range(n_distr):
+                ax.plot(freq, spectra[i, :] / spectra.max(), color=colors[i])
 
-        ax.set_xlabel('Frequency (Hz)')
-        ax.set_ylabel('Rel. PSD norm. to strongest spectrum (-)')
-        fig1.savefig(os.path.join(args.source_model,
-                                  'source_starting_model_spectra.png'))
+            ax.set_xlabel('Frequency (Hz)')
+            ax.set_ylabel('Rel. PSD norm. to strongest spectrum (-)')
+            fig1.savefig(os.path.join(args.source_model,
+                                      'source_starting_model_spectra.png'))
+        except:
+            pass
+
         # Save to an hdf5 file
         with h5py.File(os.path.join(args.source_model, 'iteration_0',
                                     'starting_model.h5'), 'w') as fh:
