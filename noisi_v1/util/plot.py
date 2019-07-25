@@ -24,7 +24,7 @@ def nice_map(ax, lat_min, lat_max, lon_min, lon_max,
         pass
 
 
-def plot_grid(map_x, map_y, map_z, stations=[], v=None, globe=False,
+def plot_grid(map_x, map_y, map_z, stations=[], locations=[], v=None, globe=False,
               outfile=None, title=None, shade='flat', cmap=plt.cm.viridis,
               sequential=False, v_min=None, normalize=False,
               coastres='110m', proj=ccrs.PlateCarree, quant_unit='PSD (m/s^2)',
@@ -86,13 +86,16 @@ def plot_grid(map_x, map_y, map_z, stations=[], v=None, globe=False,
     # draw station locations
     for sta in stations:
         ax.plot(sta[1], sta[0], '^', color='r', markersize=0.5 * size)
-
+    for loc in locations:
+        ax.plot(loc[1], loc[0], 'x', color='k', markersize=0.5 * size)
     if axes is None:
         if outfile is None:
             plt.show()
         else:
             plt.savefig(outfile, dpi=300.)
             plt.close()
+    else:
+        return(scplt)
 
 
 def plot_sourcegrid(gridpoints, coastres='110m', size=None,

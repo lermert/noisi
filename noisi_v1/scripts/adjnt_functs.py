@@ -44,6 +44,11 @@ def windowed_waveform(corr_o, corr_s, g_speed, window_params):
     return adjt_src, success
 
 
+def full_waveform(corr_o, corr_s, *args):
+    adjt_src = corr_s.data - corr_o.data
+    return adjt_src
+
+
 def square_envelope(corr_o, corr_s, g_speed,
                     window_params):
     success = False
@@ -88,6 +93,8 @@ def get_adj_func(mtype):
 
     elif mtype == 'windowed_waveform':
         func = windowed_waveform
+    elif mtype == 'full_waveform':
+        func = full_waveform
 
     # elif mtype == 'square_envelope':
     #    func = square_envelope

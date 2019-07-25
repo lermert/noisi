@@ -7,7 +7,10 @@ try:
     from noisi_v1.util.plot import plot_sourcegrid
 except ImportError:
     pass
-import cartopy.crs as ccrs
+try:
+    import cartopy.crs as ccrs
+except ImportError:
+    pass
 
 
 def create_sourcegrid(config):

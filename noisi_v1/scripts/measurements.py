@@ -30,6 +30,10 @@ def windowed_waveform(correlation, g_speed, window_params):
     return msr
 
 
+def full_waveform(correlation, *args):
+    return(correlation.data)
+
+
 def energy(correlation, g_speed, window_params):
 
     window = get_window(correlation.stats, g_speed, window_params)
@@ -112,6 +116,8 @@ def get_measure_func(mtype):
         func = square_envelope
     elif mtype == 'windowed_waveform':
         func = windowed_waveform
+    elif mtype == 'full_waveform':
+        func = full_waveform
     else:
         msg = 'Measurement functional %s not currently implemented.' % mtype
         raise ValueError(msg)

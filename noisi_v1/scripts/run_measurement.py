@@ -137,7 +137,7 @@ def measurement(source_config, mtype, step, ignore_net,
 
         # timeseries-like measurements:
         if mtype in ['square_envelope',
-                     'waveform', 'windowed_waveform']:
+                     'full_waveform', 'windowed_waveform']:
             l2_so = 0.5 * np.sum(np.power((msr_s - msr_o), 2))
             snr = snratio(tr_o, **options)
             snr_a = snratio(tr_o, **_options_ac)
