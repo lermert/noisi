@@ -30,7 +30,7 @@ def windowed_waveform(correlation, g_speed, window_params):
     return msr
 
 
-def full_waveform(correlation, *args):
+def full_waveform(correlation, **kwargs):
     return(correlation.data)
 
 

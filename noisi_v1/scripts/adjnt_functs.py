@@ -44,9 +44,9 @@ def windowed_waveform(corr_o, corr_s, g_speed, window_params):
     return adjt_src, success
 
 
-def full_waveform(corr_o, corr_s, *args):
+def full_waveform(corr_o, corr_s, **kwargs):
     adjt_src = corr_s.data - corr_o.data
-    return adjt_src
+    return adjt_src, 1
 
 
 def square_envelope(corr_o, corr_s, g_speed,
