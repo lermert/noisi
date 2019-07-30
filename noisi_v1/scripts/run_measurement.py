@@ -174,7 +174,6 @@ def measurement(source_config, mtype, step, ignore_net,
                 adjoint_source[0].data = adjt
 
         measurements.loc[i] = info
-        print(measurements.loc[i])
 
         # save the adjoint source
         if len(adjoint_source) == 1:

@@ -96,8 +96,8 @@ def get_adj_func(mtype):
     elif mtype == 'full_waveform':
         func = full_waveform
 
-    # elif mtype == 'square_envelope':
-    #    func = square_envelope
+    elif mtype == 'square_envelope':
+        func = square_envelope
 
     else:
         msg = 'Measurement functional %s not currently implemented. \
