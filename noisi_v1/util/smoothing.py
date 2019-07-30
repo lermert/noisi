@@ -68,7 +68,7 @@ def apply_smoothing_sphere(rank, size, values, coords, sigma, cap,
         v_s = np.zeros(v_s.shape)
         for i in range(size):
             v_s += v_s_all[i]
-            print('max, median', v_s.max(), np.median(v_s))
+
         return(v_s)
 
 
