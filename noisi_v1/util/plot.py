@@ -5,32 +5,49 @@ import numpy as np
 
 
 def nice_map(ax, lat_min, lat_max, lon_min, lon_max,
-             proj=ccrs.PlateCarree):
+             proj=ccrs.PlateCarree,
+             latitude_labels_west=True,
+             latitude_labels_east=False,
+             longitude_labels_south=True,
+             longitude_labels_north=False,
+             axislabelpad=-0.15):
 
     if proj not in [ccrs.Orthographic]:
         ax.set_extent([lon_min, lon_max, lat_min, lat_max], crs=proj())
 
     try:
         gl = ax.gridlines(draw_labels=True)
-        gl.xlabels_top = False
-        gl.ylabels_right = False
-        ax.text(-0.07, 0.5, 'Latitude (°)', va='bottom', ha='center',
-                rotation='vertical', rotation_mode='anchor',
-                transform=ax.transAxes, fontsize='large')
-        ax.text(0.5, -0.1, 'Longitude (°)', va='bottom', ha='center',
-                rotation='horizontal', rotation_mode='anchor',
-                transform=ax.transAxes, fontsize='large')
+        if not latitude_labels_east:
+            gl.ylabels_right = False
+        if not longitude_labels_north:
+            gl.xlabels_top = False
+        if not latitude_labels_west:
+            gl.ylabels_left = False
+        if not longitude_labels_south:
+            gl.xlabels_bottom = False
+
+        if latitude_labels_west:  # -0.15 or so for square plots
+            ax.text(axislabelpad, 0.5, 'Latitude (°)',
+                    va='bottom', ha='center',
+                    rotation='vertical', rotation_mode='anchor',
+                    transform=ax.transAxes, fontsize='large')
+        if longitude_labels_south:
+            ax.text(0.5, axislabelpad, 'Longitude (°)',
+                    va='bottom', ha='center',
+                    rotation='horizontal', rotation_mode='anchor',
+                    transform=ax.transAxes, fontsize='large')
     except TypeError:
         pass
 
 
-def plot_grid(map_x, map_y, map_z, stations=[], locations=[], v=None, globe=False,
+def plot_grid(map_x, map_y, map_z, stations=[], locations=[], v=None,
+              globe=False,
               outfile=None, title=None, shade='flat', cmap=plt.cm.viridis,
               sequential=False, v_min=None, normalize=False,
               coastres='110m', proj=ccrs.PlateCarree, quant_unit='PSD (m/s^2)',
               lat_0=None, lon_0=None, lon_min=None, lon_max=None,
               lat_min=None, lat_max=None, resol=1, alpha=1.0, size=None,
-              axes=None):
+              axes=None, colorbar=True, stationnames=[]):
 
     if lat_0 is None:
         lat_0 = 0.5 * (map_y.max() - map_y.min())
@@ -77,17 +94,24 @@ def plot_grid(map_x, map_y, map_z, stations=[], locations=[], v=None, globe=Fals
                        cmap=cmap, s=size, vmin=v_min, vmax=v,
                        transform=ccrs.PlateCarree())
 
-    if axes is None:
+    if axes is None and colorbar:
         cbar = plt.colorbar(scplt)
         cbar.ax.get_yaxis().labelpad = 15
         cbar.set_label(quant_unit, rotation=270)
-        ax.coastlines(resolution=coastres, linewidth=1.)
+
+    ax.coastlines(resolution=coastres, linewidth=1.)
 
     # draw station locations
+    if len(stations) == len(stationnames):
+        for i, stan in enumerate(stationnames):
+            sta = stations[i]
+            ax.text(sta[1] + 0.01 * size, sta[0] + 0.01, stan,
+                    bbox=dict(facecolor='0.7', alpha=0.5))
     for sta in stations:
-        ax.plot(sta[1], sta[0], '^', color='r', markersize=0.5 * size)
+        ax.plot(sta[1], sta[0], '^', color='r', markersize=0.3 * size,
+                zorder=4)
     for loc in locations:
-        ax.plot(loc[1], loc[0], 'x', color='k', markersize=0.5 * size)
+        ax.plot(loc[1], loc[0], 'x', color='lightgreen', markersize=0.5 * size)
     if axes is None:
         if outfile is None:
             plt.show()

@@ -11,13 +11,15 @@ try:
     import cartopy.crs as ccrs
 except ImportError:
     pass
-
+import pprint
 
 def create_sourcegrid(config):
 
     if config['verbose']:
-        print(config)
-    grid = points_on_ell(config['grid_dx'],
+        print("Configuration used to set up source grid:", end="\n")
+        pp = pprint.PrettyPrinter()
+        pp.pprint(config)
+    grid = points_on_ell(config['grid_dx_in_m'],
                          xmin=config['grid_lon_min'],
                          xmax=config['grid_lon_max'],
                          ymin=config['grid_lat_min'],
@@ -26,7 +28,7 @@ def create_sourcegrid(config):
     sources[0:2, :] = grid
 
     if config['verbose']:
-        print('Number of gridpoints: ', np.size(grid) / 2)
+        print('Number of gridpoints: ', sources.shape[-1])
 
     return sources
 

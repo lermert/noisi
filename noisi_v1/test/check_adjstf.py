@@ -9,7 +9,7 @@ from noisi_v1.scripts import adjnt_functs as af
 # input:
 # *********************************************
 steps = np.arange(-14, 0, 0.1)
-mtype = 'ln_energy_ratio'
+mtype = 'full_waveform'
 sacdict = {'dist': 1e6}
 g_speed = 3700.
 window_params = {}
@@ -56,12 +56,12 @@ if mtype == 'energy_diff':
 elif mtype == 'ln_energy_ratio':
     data *= (msr_s - msr_o)
 
-elif mtype == 'windowed_waveform':
+elif mtype in ['windowed_waveform', 'full_waveform']:
     pass
 
 if mtype in ['ln_energy_ratio', 'energy_diff']:
     j = 0.5 * (msr_s - msr_o)**2
-elif mtype in ['windowed_waveform', 'square_envelope', 'envelope']:
+elif mtype in ['full_waveform', 'windowed_waveform', 'square_envelope', 'envelope']:
     j = 0.5 * np.sum(np.power((msr_s - msr_o), 2))
 
 # left hand side of test 1:
@@ -81,7 +81,7 @@ for step in steps:
         msr_sh = msr_sh[0] + msr_sh[1]
 
     jh = 0.5 * (msr_sh - msr_o)**2
-    if mtype in ['windowed_waveform', 'envelope', 'square_envelope']:
+    if mtype in ['full_waveform', 'windowed_waveform', 'envelope', 'square_envelope']:
         jh = 0.5 * np.sum(np.power((msr_sh - msr_o), 2))
 
     djdch = (jh - j) / (10.**step)

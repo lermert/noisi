@@ -3,7 +3,7 @@
 # project_name: added automatically, no need to edit
 # project_path: added automatically, no need to edit
 # verbose: Print info or not (set to false for large runs)
-# grid_dx: grid step in meters. 
+# grid_dx_in_m: grid step in meters. 
 # At the equator, 1 degree of latitude is approx. 110.5 km
 # grid_lat_min: minimum lat in degrees (-90 - 90) 
 # grid_lat_max: maximum lat in degrees (-90 - 90)

@@ -5,6 +5,6 @@
     "date_created": "",
     "get_auto_corr": true,
     "model_observed_only": false,
-    "max_lag": 600,
+    "max_lag": 400,
     "source_setup_file": "" 
 }

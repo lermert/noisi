@@ -63,7 +63,6 @@ def square_envelope(corr_o, corr_s, g_speed,
     adjt_src = u1 - u2
 
     success = True
-    print(adjt_src)
     return adjt_src, success
 
 

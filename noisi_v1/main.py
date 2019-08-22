@@ -56,7 +56,7 @@ def precompute_wavefield(args, comm, size, rank):
 
 parser_setup_wavefield = subparsers.add_parser('setup_wavefield',
                                                help='Set up pre-computed \
-Green\'s function database')
+Green\'s function database.')
 parser_setup_wavefield.add_argument('project_path', type=str,
                                     help='path to project directory')
 parser_setup_wavefield.add_argument('--v', type=float, dest='v',
@@ -71,6 +71,21 @@ parser_setup_wavefield.add_argument('--rho', type=float, dest='rho',
 parser_setup_wavefield.set_defaults(func=precompute_wavefield)
 
 # #############################################################################
+# Create source directory structure
+###############################################################################
+
+parser_setup_source_dir = subparsers.add_parser('setup_source_dir',
+                                                help='Set up directory \
+structure for a new source model.')
+parser_setup_source_dir.add_argument('source_model', type=str, help='Name for\
+ new source model. This will create a directory by that name and copy the\
+ default input there. The second run will set up the source starting model as\
+ specified in the configurations.')
+parser_setup_source_dir.add_argument('--new_model', default=True)
+parser_setup_source_dir.set_defaults(func=source_setup)
+
+
+# #############################################################################
 # Initialize a source model
 ###############################################################################
 
@@ -81,6 +96,7 @@ parser_setup_source.add_argument('source_model', type=str, help='Name for the\
  new source model. This will create a directory by that name and copy the\
  default input there. The second run will set up the source starting model as\
  specified in the configurations.')
+parser_setup_source.add_argument('--new_model', default=False)
 parser_setup_source.set_defaults(func=source_setup)
 
 
@@ -120,8 +136,8 @@ parser_measurement.set_defaults(func=run_measurement)
 # ###########################################################################
 # Get kernels
 # ###########################################################################
-parser_kernel = subparsers.add_parser('kernel', help='Calculate sensitivity \
-kernels.')
+parser_kernel = subparsers.add_parser('kernel', help='Calculate source \
+sensitivity kernels.')
 parser_kernel.add_argument('source_model', type=str, help='Path to source\
  model.')
 parser_kernel.add_argument('step', type=int, help='Iteration step (start\

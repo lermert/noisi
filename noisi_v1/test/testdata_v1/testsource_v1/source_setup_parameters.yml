@@ -3,18 +3,4 @@
     standard_deviation_Hz: 0.01
     weight: 1.0
     taper_percent: 1.0
--   distribution: ocean
-    mean_frequency_Hz: 0.1
-    standard_deviation_Hz: 0.02
-    weight: 0.0
-    taper_percent: 1.0
--   distribution: gaussian_blob
-    center_latlon:
-    - 0.0
-    - 0.0
-    sigma_m: 5000
-    mean_frequency_Hz: 0.1
-    standard_deviation_Hz: 0.02
-    only_in_the_ocean: true
-    weight: 0.0
-    taper_percent: 1.0
+    normalize_spectrum_to_unity: false

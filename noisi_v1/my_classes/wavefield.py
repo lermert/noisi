@@ -4,6 +4,7 @@ import h5py
 try:
     from noisi_v1.util import plot
 except ImportError:
+    print("NO plotting possible (is cartopy installed?)", end='\n')
     pass
 from noisi_v1.util import filter
 try:
@@ -199,7 +200,7 @@ resetting to last sample.')
 
     def plot_snapshot(self, t, resolution=1, **kwargs):
 
-        if 'plot' not in locals():
+        if 'plot' not in globals():
             print("Cannot plot, is cartopy installed?")
             return()
 

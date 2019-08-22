@@ -1,5 +1,5 @@
 date_created: 2019.06.12
-mtype: ln_energy_ratio
+mtype: full_waveform 
 taper_perc: 0.01
 bandpass: null
 weights:
@@ -7,7 +7,7 @@ weights:
 g_speed: 3000
 window_params_wtype: hann
 window_params_hw: 20
-window_params_win_overlap: false
+window_params_win_overlap: true
 window_params_sep_noise: 0.0
 window_plot_measurements: true 
 ignore_network: false

@@ -12,18 +12,21 @@ from noisi_v1.util.geo import is_land, geographical_distances
 from noisi_v1.util.geo import get_spherical_surface_elements
 try:
     from noisi_v1.util.plot import plot_grid
+    create_plot = True
 except ImportError:
+    create_plot = False
     pass
 import matplotlib.pyplot as plt
 from math import pi, sqrt
 from warnings import warn
+import pprint
 
 
 class source_setup(object):
 
     def __init__(self, args, comm, size, rank):
 
-        if os.path.exists(args.source_model):
+        if not args.new_model:
             self.setup_source_startingmodel(args)
         else:
             self.initialize_source(args)
@@ -106,11 +109,12 @@ and measr_config.yml to source model directory, please edit and rerun.")
         return()
 
     def setup_source_startingmodel(self, args):
+
         # plotting:
         colors = ['purple', 'g', 'b', 'orange']
         colors_cmaps = [plt.cm.Purples, plt.cm.Greens, plt.cm.Blues,
                         plt.cm.Oranges]
-
+        print("Setting up source starting model.", end="\n")
         with io.open(os.path.join(args.source_model,
                                   'source_config.yml'), 'r') as fh:
             source_conf = yaml.safe_load(fh)
@@ -122,7 +126,9 @@ and measr_config.yml to source model directory, please edit and rerun.")
         with io.open(source_conf['source_setup_file'], 'r') as fh:
             parameter_sets = yaml.safe_load(fh)
             if conf['verbose']:
-                print(parameter_sets)
+                print("The following input parameters are used:", end="\n")
+                pp = pprint.PrettyPrinter()
+                pp.pprint(parameter_sets)
 
         # load the source locations of the grid
         grd = np.load(os.path.join(conf['project_path'],
@@ -140,7 +146,7 @@ approximate surface elements.')
         wfs = glob(os.path.join(conf['project_path'], 'greens', '*.h5'))
         if wfs != []:
             if conf['verbose']:
-                print('Found wavefield.')
+                print('Found wavefield stats.')
             else:
                 pass
         else:
@@ -163,7 +169,7 @@ precompute_wavefield first.')
             # plot
             outfile = os.path.join(args.source_model,
                                    'source_starting_model_distr%g.png' % i)
-            if 'plot_grid' in locals():
+            if create_plot:
                 plot_grid(grd[0], grd[1], coeffs[:, i],
                           outfile=outfile, cmap=colors_cmaps[i],
                           sequential=True, normalize=False,
@@ -174,7 +180,7 @@ precompute_wavefield first.')
 
         # plotting the spectra
         # plotting is not necessarily done to make sure code runs on clusters
-        try:
+        if create_plot:
             fig1 = plt.figure()
             ax = fig1.add_subplot('111')
             for i in range(n_distr):
@@ -184,8 +190,6 @@ precompute_wavefield first.')
             ax.set_ylabel('Rel. PSD norm. to strongest spectrum (-)')
             fig1.savefig(os.path.join(args.source_model,
                                       'source_starting_model_spectra.png'))
-        except:
-            pass
 
         # Save to an hdf5 file
         with h5py.File(os.path.join(args.source_model, 'iteration_0',
@@ -198,13 +202,10 @@ precompute_wavefield first.')
             fh.create_dataset('surface_areas',
                               data=surf_el.astype(np.float))
 
-        uniform_spatial = np.ones(coeffs.shape)
-        for ix_distr in range(n_distr):
-            uniform_spatial[:, ix_distr] *= float(parameter_sets[i]['weight'])
-
         # Save to an hdf5 file
         with h5py.File(os.path.join(args.source_model,
                                     'spectral_model.h5'), 'w') as fh:
+            uniform_spatial = np.ones(coeffs.shape) * 1.0
             fh.create_dataset('coordinates', data=grd)
             fh.create_dataset('frequencies', data=freq)
             fh.create_dataset('model', data=uniform_spatial.astype(np.float))
@@ -217,19 +218,19 @@ precompute_wavefield first.')
 
         if parameters['distribution'] == 'homogeneous':
             if verbose:
-                print('homogeneous distribution')
+                print('Adding homogeneous distribution')
             distribution = np.ones(grd.shape[-1])
             return(parameters['weight'] * distribution)
 
         elif parameters['distribution'] == 'ocean':
             if verbose:
-                print('ocean-only distribution')
+                print('Adding ocean-only distribution')
             is_ocean = np.abs(is_land(grd[0], grd[1]) - 1.)
             return(parameters['weight'] * is_ocean)
 
         elif parameters['distribution'] == 'gaussian_blob':
             if verbose:
-                print('gaussian blob')
+                print('Adding gaussian blob')
             dist = geographical_distances(grd,
                                           parameters['center_latlon']) / 1000.
             sigma_km = parameters['sigma_m'] / 1000.
@@ -238,7 +239,7 @@ precompute_wavefield first.')
             # important: Use sigma in m because the surface elements are in m
             norm_factor = 1. / ((sigma_km * 1000.) ** 2 * 2. * np.pi)
             blob *= norm_factor
-            if parameters['normalize']:
+            if parameters['normalize_blob_to_unity']:
                 blob /= blob.max()
 
             if parameters['only_in_the_ocean']:
@@ -254,6 +255,8 @@ precompute_wavefield first.')
         taper = cosine_taper(len(freq), parameters['taper_percent'] / 100.)
         spec = taper * np.exp(-((freq - mu) ** 2) /
                               (2 * sig ** 2))
-        spec = spec / (sig * sqrt(2. * pi))
+
+        if not parameters['normalize_spectrum_to_unity']:
+            spec = spec / (sig * sqrt(2. * pi))
 
         return(spec)

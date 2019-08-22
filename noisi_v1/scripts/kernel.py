@@ -193,13 +193,13 @@ def compute_kernel(input_files, all_conf, nsrc, all_ns, taper,
                 spec2 = wf2.data[i, :]
 
         g1g2_tr = np.multiply(np.conjugate(spec1), spec2)
-        # spectrum -- to be replaced by spectral basis function
+        # spectrum
         c = np.multiply(g1g2_tr, S)
     #######################################################################
     # Get Kernel at that location
     #######################################################################
-        corr_temp = my_centered(np.fft.ifftshift(np.fft.irfft(c, n)),
-                                n_corr) * nsrc.surf_area[i]
+        corr_temp = my_centered(np.fft.fftshift(np.fft.irfft(c, n)),
+                                n_corr)
 
     #######################################################################
     # Apply the 'adjoint source'

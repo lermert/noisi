@@ -251,6 +251,7 @@ def run_measurement(args, comm, size, rank):
         window_params['win_overlap'] = True
 
     hws = window_params['hw'][:]
+
     for i in range(len(bandpass)):
 
         g_speed = g_speeds[i]

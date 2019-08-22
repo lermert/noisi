@@ -17,6 +17,11 @@ from noisi_v1 import NoiseSource
 from obspy.signal.invsim import cosine_taper
 from noisi_v1.scripts.kernel import define_kernel_tasks, compute_kernel
 from noisi_v1.scripts.kernel import add_input_files as input_files_kernel
+from mpi4py import MPI
+
+comm = MPI.COMM_WORLD
+rank = comm.Get_rank()
+size = comm.Get_size()
 
 
 def test_precomp_wavefield():
@@ -30,7 +35,7 @@ def test_precomp_wavefield():
     input.q = 100.
     input.project_path = 'test/testdata_v1'
 
-    p = precomp_wavefield(args=input)
+    p = precomp_wavefield(args=input, comm=comm, rank=rank, size=size)
     spec = p.green_spec_analytic(10000.)
 
     assert(type(spec) == np.ndarray)
@@ -130,8 +135,6 @@ def test_geostuff():
     assert(type(dist) == np.ndarray)
     assert(pytest.approx(dist[0]) == 6662472.7182103)
     assert is_land(location, location)[0]
-    assert(pytest.approx(wgs84()[2]) == 0.006694379990197585)
-    assert(pytest.approx(wgs84()[3]) == 298.2572235604902)
     assert(floor(geograph_to_geocent(location[0])) == 44)
     assert(pytest.approx(len_deg_lat(location[0])) == 111131.779)
     assert(pytest.approx(len_deg_lon(location[0])) == 78582.91976)
@@ -186,7 +189,7 @@ def test_forward_model():
             self.steplengthrun = False,
             self.ignore_network = True
     args = args()
-    all_config = config_params(args)
+    all_config = config_params(args, comm, size, rank)
     assert all_config.auto_corr
 
     ns = get_ns(all_config)
@@ -212,6 +215,8 @@ def test_forward_model():
                                                   NoiseSource(nsrc), ns, taper)
     corr_saved = np.load(os.path.join('test', 'testdata_v1', 'testdata',
                                       'NET.STA1..MXZ--NET.STA2..MXZ.npy'))
+
+    print(correlation[0: 10] / corr_saved[0: 10])
     assert np.allclose(correlation, corr_saved)
 
 
@@ -225,16 +230,16 @@ def test_sensitivity_kernel():
             self.steplengthrun = False,
             self.ignore_network = True
     args = args()
-    all_config = config_params(args)
+    all_config = config_params(args, comm, size, rank)
     ns = get_ns(all_config)
-    p = define_kernel_tasks(all_config)
+    p = define_kernel_tasks(all_config, comm, size, rank)
     assert len(p[0]) == 3
     assert p[0][2][1].split()[-1] == 'STA2'
 
     input_files = input_files_kernel(p[0][1], all_config)
 
-    nsrc = os.path.join('test', 'testdata_v1', 'testsource_v1', 'iteration_0',
-                        'starting_model.h5')
+    nsrc = os.path.join('test', 'testdata_v1', 'testsource_v1',
+                        'spectral_model.h5')
     # use a one-sided taper: The seismogram probably has a non-zero end,
     # being cut off wherever the solver stopped running.
     taper = cosine_taper(ns[0], p=0.01)

@@ -12,14 +12,10 @@ from scipy.fftpack import next_fast_len
 from scipy.signal import lfilter, butter
 from noisi_v1.util.geo import geograph_to_geocent
 from glob import glob
-from mpi4py import MPI
 try:
     import instaseis
 except ImportError:
     pass
-# comm = MPI.COMM_WORLD
-# size = comm.Get_size()
-# rank = comm.Get_rank()
 
 
 class precomp_wavefield(object):
@@ -108,11 +104,14 @@ class precomp_wavefield(object):
         # Apply a filter
         if self.config['wavefield_filter'] is not None:
             freq_nyq = self.Fs / 2.0  # Nyquist
+
             if freq_nyq < self.config['wavefield_filter'][1]:
-                warn("Selected upper freq reset to Nyquist freq (was above).")
+                warn("Selected upper freq > Nyquist, \
+reset to 95\% of Nyquist freq.")
             freq_minres = 1. / self.config['wavefield_duration']
             # lowest resolved
-            freq_max = min(freq_nyq, self.config['wavefield_filter'][1])
+            freq_max = min(0.999 * freq_nyq,
+                           self.config['wavefield_filter'][1])
             freq_min = max(freq_minres, self.config['wavefield_filter'][0])
 
             f0 = freq_min / freq_nyq
@@ -145,17 +144,21 @@ class precomp_wavefield(object):
         rec = instaseis.Receiver(latitude=lat_sta, longitude=lon_sta)
         point_f = float(self.config['wavefield_point_force'])
 
-        station_id = station['net'] + '.' + station['sta'] + '..MX' + \
-            self.config['wavefield_channel']
+        channel = self.config['wavefield_channel']
+        station_id = station['net'] + '.' + station['sta'] + '..MX' + channel
+
         if self.config['verbose']:
             print(station_id)
 
-        if self.config['wavefield_channel'] == 'Z':
+        if channel == 'Z':
             c_index = 0
-        elif self.config['wavefield_channel'] == 'R':
-            raise NotImplementedError('Horizontal components not yet implem.')
-        elif self.config['wavefield_channel'] == 'T':
-            raise NotImplementedError('Horizontal components not yet implem.')
+        elif channel == 'R':
+            c_index = 1
+        elif channel == 'T':
+            c_index = 2
+        else:
+            raise ValueError("Unknown channel: %s, choose R, T, Z"
+                             % channel)
 
         # initialize the file
         f_out = os.path.join(self.wf_path, station_id + '.h5')
@@ -214,6 +217,10 @@ class precomp_wavefield(object):
                 else:
                     raise ValueError('Unknown data quantity. \
 Choose DIS, VEL or ACC in configuration.')
+                if channel in ['R', 'T']:
+                    baz = gps2dist_azimuth(lat_src, lon_src,
+                                           lat_sta, lon_sta)[2]
+                    values.rotate('NE->RT', baz)
 
                 if self.filter is not None:
                     trace = lfilter(*self.filter, x=values[c_index].data)

@@ -25,6 +25,10 @@ def setup_proj(args, comm, size, rank):
                               'config', 'stationlist.csv'), 'r') as fh:
         stations = fh.read()
 
+    with io.open(os.path.join(noisi_path,
+                              'config', 'data_sac_headers.txt'), 'r') as fh:
+        sacheaders = fh.read()
+
     conf['date_created'] = time.strftime("%Y.%m.%d")
     conf['project_name'] = project_name
     conf['project_path'] = os.path.abspath(project_name)
@@ -33,7 +37,12 @@ def setup_proj(args, comm, size, rank):
         cf = yaml.dump(conf, sort_keys=False, indent=4)
         fh.write(cf)
         fh.write(comments)
+
     with io.open(os.path.join(project_name, 'stationlist.csv'), 'w') as fh:
         fh.write(stations)
-    print("Created project directory {}.\nPlease edit config file and run \
-setup_sourcegrid.".format(project_name))
+
+    with io.open(os.path.join(project_name, 'data_sac_headers'), 'w') as fh:
+        fh.write(sacheaders)
+
+    print("Created project directory {}.\n\
+You can now edit the config file and proceed.".format(project_name))

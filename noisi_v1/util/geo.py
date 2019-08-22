@@ -24,7 +24,7 @@ def geographical_distances(grid, location):
 
 def is_land(x, y, res="110m"):
 
-    if prep not in locals():
+    if 'prep' not in globals():
         raise ImportError("cartopy is needed to design ocean-only source.")
     assert(res in ["10m", "50m", "110m"]), "Resolution must be 10m, 50m, 110 m"
 
