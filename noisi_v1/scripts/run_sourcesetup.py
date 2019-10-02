@@ -173,7 +173,9 @@ precompute_wavefield first.')
                 plot_grid(grd[0], grd[1], coeffs[:, i],
                           outfile=outfile, cmap=colors_cmaps[i],
                           sequential=True, normalize=False,
-                          quant_unit='Spatial weight (-)')
+                          quant_unit='Spatial weight (-)',
+                          axislabelpad=-0.1,
+                          size=10)
 
             spectra[i, :] = self.spectrum_from_parameters(freq,
                                                           parameter_sets[i])

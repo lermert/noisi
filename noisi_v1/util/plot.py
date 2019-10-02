@@ -44,10 +44,11 @@ def plot_grid(map_x, map_y, map_z, stations=[], locations=[], v=None,
               globe=False,
               outfile=None, title=None, shade='flat', cmap=plt.cm.viridis,
               sequential=False, v_min=None, normalize=False,
-              coastres='110m', proj=ccrs.PlateCarree, quant_unit='PSD (m/s^2)',
+              coastres='110m', proj=ccrs.PlateCarree, quant_unit='PSD',
               lat_0=None, lon_0=None, lon_min=None, lon_max=None,
               lat_min=None, lat_max=None, resol=1, alpha=1.0, size=None,
-              axes=None, colorbar=True, stationnames=[]):
+              axes=None, colorbar=True, stationnames=[], axislabelpad=-0.15,
+              plot_coastlines=True, stationcolor='r', stasizefactor=0.3):
 
     if lat_0 is None:
         lat_0 = 0.5 * (map_y.max() - map_y.min())
@@ -69,9 +70,10 @@ def plot_grid(map_x, map_y, map_z, stations=[], locations=[], v=None,
         map_z = map_z[::resol]
 
     if axes is None:
-        fig = plt.figure(figsize=(11, 9))
+        fig = plt.figure(figsize=(5.4, 4.6))
         ax = fig.add_subplot(1, 1, 1, projection=proj())
-        nice_map(ax, lat_min, lat_max, lon_min, lon_max, proj=proj)
+        nice_map(ax, lat_min, lat_max, lon_min, lon_max, proj=proj,
+                 axislabelpad=axislabelpad)
     else:
         ax = axes
     if title is not None:
@@ -99,7 +101,8 @@ def plot_grid(map_x, map_y, map_z, stations=[], locations=[], v=None,
         cbar.ax.get_yaxis().labelpad = 15
         cbar.set_label(quant_unit, rotation=270)
 
-    ax.coastlines(resolution=coastres, linewidth=1.)
+    if plot_coastlines:
+        ax.coastlines(resolution=coastres, linewidth=1.)
 
     # draw station locations
     if len(stations) == len(stationnames):
@@ -108,7 +111,8 @@ def plot_grid(map_x, map_y, map_z, stations=[], locations=[], v=None,
             ax.text(sta[1] + 0.01 * size, sta[0] + 0.01, stan,
                     bbox=dict(facecolor='0.7', alpha=0.5))
     for sta in stations:
-        ax.plot(sta[1], sta[0], '^', color='r', markersize=0.3 * size,
+        ax.plot(sta[1], sta[0], '^', color=stationcolor,
+                markersize=stasizefactor * size,
                 zorder=4)
     for loc in locations:
         ax.plot(loc[1], loc[0], 'x', color='lightgreen', markersize=0.5 * size)

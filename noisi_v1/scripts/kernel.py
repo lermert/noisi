@@ -149,7 +149,8 @@ def compute_kernel(input_files, all_conf, nsrc, all_ns, taper,
         if False in (wf1.sourcegrid[0, -10:] == nsrc.src_loc[0, -10:]):
             raise ValueError("Wave field and source not consistent.")
 
-    kern = np.zeros((all_conf.filtcnt, ntraces, len(adjt)))
+    kern = np.zeros((nsrc.spect_basis.shape[0],
+                     all_conf.filtcnt, ntraces, len(adjt)))
 
     # Loop over locations
     print_each_n = max(5, round(max(ntraces // 5, 1), -1))
@@ -194,28 +195,31 @@ def compute_kernel(input_files, all_conf, nsrc, all_ns, taper,
 
         g1g2_tr = np.multiply(np.conjugate(spec1), spec2)
         # spectrum
-        c = np.multiply(g1g2_tr, S)
-    #######################################################################
-    # Get Kernel at that location
-    #######################################################################
-        corr_temp = my_centered(np.fft.fftshift(np.fft.irfft(c, n)),
-                                n_corr)
 
-    #######################################################################
-    # Apply the 'adjoint source'
-    #######################################################################
-        for ix_f in range(all_conf.filtcnt):
-            f = adjt_srcs[ix_f]
+        for ix_spec in range(nsrc.spect_basis.shape[0]):
+            c = np.multiply(g1g2_tr, nsrc.spect_basis[ix_spec, :])
+            ###################################################################
+            # Get Kernel at that location
+            ###################################################################
+            corr_temp = my_centered(np.fft.fftshift(np.fft.irfft(c, n)),
+                                    n_corr)
 
-            if f is None:
-                continue
+            ###################################################################
+            # Apply the 'adjoint source'
+            ###################################################################
+            for ix_f in range(all_conf.filtcnt):
+                f = adjt_srcs[ix_f]
 
-            for j in range(len(f)):
-                delta = f[j].stats.delta
-                kern[ix_f, i, j] = np.dot(corr_temp, f[j].data) * delta
+                if f is None:
+                    continue
 
-        if i % print_each_n == 0 and all_conf.config['verbose']:
-            print("Finished {} of {} source locations.".format(i, ntraces))
+                for j in range(len(f)):
+                    delta = f[j].stats.delta
+                    kern[ix_spec, ix_f, i, j] = np.dot(corr_temp,
+                                                       f[j].data) * delta
+
+            if i % print_each_n == 0 and all_conf.config['verbose']:
+                print("Finished {} of {} source locations.".format(i, ntraces))
     if not insta:
         wf1.file.close()
         wf2.file.close()
@@ -312,7 +316,7 @@ def run_kern(args, comm, size, rank):
                 continue
 
             for ix_f in range(all_conf.filtcnt):
-                if kern[ix_f, :, :].sum() != 0:
+                if kern[:, ix_f, :, :].sum() != 0:
                     filename = output_file + '.{}.npy'.format(ix_f)
-                    np.save(filename, kern[ix_f, :, :])
+                    np.save(filename, kern[:, ix_f, :, :])
     return()

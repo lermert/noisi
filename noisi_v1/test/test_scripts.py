@@ -216,7 +216,6 @@ def test_forward_model():
     corr_saved = np.load(os.path.join('test', 'testdata_v1', 'testdata',
                                       'NET.STA1..MXZ--NET.STA2..MXZ.npy'))
 
-    print(correlation[0: 10] / corr_saved[0: 10])
     assert np.allclose(correlation, corr_saved)
 
 
