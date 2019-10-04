@@ -1,11 +1,11 @@
-project_path: /home/lermert/code/noisi_v1/noisi_v1/test/testdata_v1
+project_path: ./test/testdata_v1
 source_name: testsource_v1
-source_path: /home/lermert/code/noisi_v1/noisi_v1/test/testdata_v1/testsource_v1
+source_path: ./test/testdata_v1/testsource_v1
 date_created: 2019.06.12
 get_auto_corr: true
 model_observed_only: false
 max_lag: 100
-source_setup_file: /home/lermert/code/noisi_v1/noisi_v1/test/testdata_v1/testsource_v1/source_setup_parameters.yml
+source_setup_file: ./test/testdata_v1/testsource_v1/source_setup_parameters.yml
 project_name: ''
 # project_path: added automatically, no need to edit
 # source_name: added automatically, no need to edit

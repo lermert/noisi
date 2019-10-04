@@ -186,9 +186,14 @@ precompute_wavefield first.')
             fig1 = plt.figure()
             ax = fig1.add_subplot('111')
             for i in range(n_distr):
-                ax.plot(freq, spectra[i, :] / spectra.max(), color=colors[i])
+                ax.plot(freq[0: len(freq) // 2 + 1],
+                        spectra[i, 0: len(freq) // 2 + 1] /
+                        spectra.max(), color=colors[i])
 
-            ax.set_xlabel('Frequency (Hz)')
+            ax.set_xlabel('Frequency / Nyquist Frequency')
+            plt.xticks([0, freq.max() * 0.125, freq.max() * 0.25,
+                       freq.max() * 0.375, freq.max() * 0.5],
+                       ['0', '0.25', '0.5', '0.75', '1'])
             ax.set_ylabel('Rel. PSD norm. to strongest spectrum (-)')
             fig1.savefig(os.path.join(args.source_model,
                                       'source_starting_model_spectra.png'))

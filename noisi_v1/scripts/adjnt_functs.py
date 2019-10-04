@@ -54,13 +54,13 @@ def square_envelope(corr_o, corr_s, g_speed,
     success = False
     env_s = corr_s.data**2 + np.imag(hilbert(corr_s.data))**2
     env_o = corr_o.data**2 + np.imag(hilbert(corr_o.data))**2
-    d_env_1 = 2. * corr_s.data
-    d_env_2 = (2. * np.imag(hilbert(corr_s.data)))
+    d_env_1 = corr_s.data
+    d_env_2 = (np.imag(hilbert(corr_s.data)))
 
     u1 = (env_s - env_o) * d_env_1
     u2 = np.imag(hilbert((env_s - env_o) * d_env_2))
 
-    adjt_src = u1 - u2
+    adjt_src = 2 * (u1 - u2)
 
     success = True
     return adjt_src, success

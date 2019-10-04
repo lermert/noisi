@@ -1,6 +1,6 @@
 date_created: 2019.04.30
 project_name: testdata_v1
-project_path: /home/lermert/code/noisi_v1/noisi_v1/test/testdata_v1
+project_path: ./test/testdata_v1
 verbose: true
 grid_dx: 50000
 grid_lat_min: -1.0
