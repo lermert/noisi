@@ -66,6 +66,13 @@ def geograph_to_geocent(theta):
     return theta
 
 
+def geocent_to_geograph(theta):
+    # the other way around
+    e2 = wgs84()[2]
+    theta = np.rad2deg(np.arctan(np.tan(np.deg2rad(theta)) / (1 - e2)))
+    return(theta)
+
+
 def len_deg_lon(lat):
     (a, b, e_2, f) = wgs84()
 

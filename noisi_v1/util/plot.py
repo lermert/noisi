@@ -48,7 +48,8 @@ def plot_grid(map_x, map_y, map_z, stations=[], locations=[], v=None,
               lat_0=None, lon_0=None, lon_min=None, lon_max=None,
               lat_min=None, lat_max=None, resol=1, alpha=1.0, size=None,
               axes=None, colorbar=True, stationnames=[], axislabelpad=-0.15,
-              plot_coastlines=True, stationcolor='r', stasizefactor=0.3):
+              plot_coastlines=True, stationcolor='r', stasizefactor=0.3,
+              colorbar_ticks=None):
 
     if lat_0 is None:
         lat_0 = 0.5 * (map_y.max() - map_y.min())
@@ -92,14 +93,17 @@ def plot_grid(map_x, map_y, map_z, stations=[], locations=[], v=None,
 
     if size is None:
         size = 100. * abs(map_x[1] - map_x[0])
-    scplt = ax.scatter(map_x, map_y, c=map_z, alpha=alpha, marker='.',
+    scplt = ax.scatter(map_x, map_y, c=map_z,
+                       alpha=alpha, marker='.',
                        cmap=cmap, s=size, vmin=v_min, vmax=v,
                        transform=ccrs.PlateCarree())
-
     if axes is None and colorbar:
         cbar = plt.colorbar(scplt)
         cbar.ax.get_yaxis().labelpad = 15
         cbar.set_label(quant_unit, rotation=270)
+        if colorbar_ticks is not None:
+            cbar.set_ticks(colorbar_ticks[0])
+            cbar.set_ticklabels(colorbar_ticks[1])
 
     if plot_coastlines:
         ax.coastlines(resolution=coastres, linewidth=1.)
