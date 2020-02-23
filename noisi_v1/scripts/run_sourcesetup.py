@@ -140,7 +140,7 @@ and measr_config.yml to source model directory, please edit and rerun.")
         else:
             warn('Large grid; surface element computation slow. Using \
 approximate surface elements.')
-            surf_el = np.ones(grd.shape[-1]) * conf['grid_dx'] ** 2
+            surf_el = np.ones(grd.shape[-1]) * conf['grid_dx_in_m'] ** 2
 
         # get the relevant array sizes
         wfs = glob(os.path.join(conf['project_path'], 'greens', '*.h5'))

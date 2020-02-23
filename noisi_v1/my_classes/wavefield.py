@@ -14,6 +14,7 @@ except ImportError:
 
 from obspy.signal.invsim import cosine_taper
 from obspy.signal.filter import integer_decimation
+from scipy.fftpack import next_fast_len
 from warnings import warn
 
 
@@ -36,12 +37,19 @@ class WaveField(object):
         self.stats = dict(self.file['stats'].attrs)
         self.fdomain = self.stats['fdomain']
         self.sourcegrid = self.file['sourcegrid']
-
-        self.data = self.file['data']
-
+        
+        try:
+            self.data = self.file['data']
+        except KeyError:
+            self.data = self.file['data_z']
         if self.fdomain:
             self.freq = np.fft.rfftfreq(self.stats['npad'],
                                         d=1. / self.stats['Fs'])
+        if 'npad' not in self.stats:
+            if self.fdomain:
+                self.stats['npad'] = 2 * self.stats['nt'] - 2
+            else:
+                self.stats['npad'] = next_fast_len(2 * self.stats['nt'] - 1)
 
     def get_green(self, ix=None, by_index=True):
 
@@ -211,11 +219,11 @@ resetting to last sample.')
         map_x = self.sourcegrid[0][0::resolution]
         map_y = self.sourcegrid[1][0::resolution]
 
-        if self.stats['data_quantity'] == 'DIS':
+        if self.stats['data_quantity'].decode() == 'DIS':
             quant_unit = 'Displacement (m)'
-        elif self.stats['data_quantity'] == 'VEL':
+        elif self.stats['data_quantity'].decode() == 'VEL':
             quant_unit = 'Velocity (m/s)'
-        elif self.stats['data_quantity'] == 'ACC':
+        elif self.stats['data_quantity'].decode() == 'ACC':
             quant_unit = 'Acceleration (m/s^2)'
 
         plot.plot_grid(map_x, map_y,
