@@ -171,7 +171,7 @@ precompute_wavefield first.')
                                    'source_starting_model_distr%g.png' % i)
             if create_plot:
                 plot_grid(grd[0], grd[1], coeffs[:, i],
-                          outfile=outfile, cmap=colors_cmaps[i],
+                          outfile=outfile, cmap=colors_cmaps[i%len(colors_cmaps)],
                           sequential=True, normalize=False,
                           quant_unit='Spatial weight (-)',
                           axislabelpad=-0.1,
@@ -186,13 +186,12 @@ precompute_wavefield first.')
             fig1 = plt.figure()
             ax = fig1.add_subplot('111')
             for i in range(n_distr):
-                ax.plot(freq[0: len(freq) // 2 + 1],
-                        spectra[i, 0: len(freq) // 2 + 1] /
-                        spectra.max(), color=colors[i])
+                ax.plot(freq, spectra[i, :] / spectra.max(),
+                        color=colors[i%len(colors_cmaps)])
 
             ax.set_xlabel('Frequency / Nyquist Frequency')
-            plt.xticks([0, freq.max() * 0.125, freq.max() * 0.25,
-                       freq.max() * 0.375, freq.max() * 0.5],
+            plt.xticks([0, freq.max() * 0.25, freq.max() * 0.5,
+                       freq.max() * 0.75, freq.max()],
                        ['0', '0.25', '0.5', '0.75', '1'])
             ax.set_ylabel('Rel. PSD norm. to strongest spectrum (-)')
             fig1.savefig(os.path.join(args.source_model,

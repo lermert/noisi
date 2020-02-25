@@ -219,11 +219,15 @@ resetting to last sample.')
         map_x = self.sourcegrid[0][0::resolution]
         map_y = self.sourcegrid[1][0::resolution]
 
-        if self.stats['data_quantity'].decode() == 'DIS':
+        if type(self.stats['data_quantity']) != str:
+            data_quantity = self.stats['data_quantity'].decode()
+        else:
+            data_quantity = self.stats['data_quantity']
+        if  data_quantity == 'DIS':
             quant_unit = 'Displacement (m)'
-        elif self.stats['data_quantity'].decode() == 'VEL':
+        elif data_quantity == 'VEL':
             quant_unit = 'Velocity (m/s)'
-        elif self.stats['data_quantity'].decode() == 'ACC':
+        elif data_quantity == 'ACC':
             quant_unit = 'Acceleration (m/s^2)'
 
         plot.plot_grid(map_x, map_y,

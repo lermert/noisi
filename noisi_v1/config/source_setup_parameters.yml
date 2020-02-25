@@ -23,7 +23,7 @@
   center_latlon: [45.0, -4.0]
   sigma_m: 50000
   mean_frequency_Hz: 0.1
-  standard_deviation_Hz: 0.02
+  standard_deviation_Hz: 0.015
   only_in_the_ocean: true
   weight: 1.0
   taper_percent: 1.0
