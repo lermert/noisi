@@ -33,13 +33,14 @@ setup(
         "numpy",
         "scipy",
         "obspy>=1.0.1",
-        "scipy>=1.2.0",
         "geographiclib",
         "mpi4py>=2.0.0",
         "pandas",
-        "cartopy",
         "h5py",
-        "PyYaml"],
+        "PyYaml",
+        "cartopy",
+        "jupyter",
+        "pytest"],
     entry_points = {
         'console_scripts': [
             'noisi = noisi_v1.main:run'
