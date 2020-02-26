@@ -30,6 +30,8 @@ setup(
                   'config/data_sac_headers.txt',
                   'config/source_config_comments.txt']},
     install_requires = [
+        "numpy",
+        "scipy",
         "obspy>=1.0.1",
         "scipy>=1.2.0",
         "geographiclib",
