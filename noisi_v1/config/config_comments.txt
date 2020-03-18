@@ -27,4 +27,5 @@
 # waveforms green's functions in Hz.
 # wavefield_duration: Duration of prepared green's functions in seconds.
 # wavefield_filter: [freq_min, freq_max] of prepared green's functions in Hz.
-# wavefield_channel: Synthetics channel (of recording), Z, R or T
+# wavefield_channel: Synthetics channel (of recording), Z, E, N or "all". This
+# also determines which correlation channels (ZZ, ZE, ZN...NN...) are computed.

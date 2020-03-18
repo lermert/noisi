@@ -3,12 +3,15 @@ from __future__ import print_function
 import numpy as np
 import os
 from glob import glob
-from math import ceil
+from math import ceil, radians, sin, cos
+import re
+from pandas import read_csv
 
 from obspy import read, Stream
 from noisi_v1 import NoiseSource, WaveField
 from obspy.signal.invsim import cosine_taper
-# from warnings import warn
+from obspy.geodetics import gps2dist_azimuth
+from warnings import warn
 from noisi_v1.util.windows import my_centered
 from noisi_v1.util.geo import geograph_to_geocent
 from noisi_v1.util.corr_pairs import define_correlationpairs, rem_no_obs
@@ -18,86 +21,85 @@ try:
 except ImportError:
     pass
 
-# prepare embarrassingly parallel run:
-# comm = MPI.COMM_WORLD
-# size = comm.Get_size()
-# rank = comm.Get_rank()
+
+def perform_rotation(rot_task, projdir, s1, s2, sta1, sta2):
+
+    # find the station station backazimuth
+    datfile = os.path.join(projdir, "stationlist.csv")
+    dat = read_csv(datfile)
+    lat1 = float(dat[dat.sta == sta1]["lat"])
+    lon1 = float(dat[dat.sta == sta1]["lon"])
+    lat2 = float(dat[dat.sta == sta2]["lat"])
+    lon2 = float(dat[dat.sta == sta2]["lat"])
+    baz = radians(gps2dist_azimuth(lat1, lon1, lat2, lon2)[2])
+
+    if rot_task == "NR":
+        return(-cos(baz) * s1 - sin(baz) * s2)
+    elif rot_task == "ET":
+        return(sin(baz) * s2 - cos(baz) * s1)
+
 
 
 def add_input_files(kp, all_conf, insta=False):
 
     inf1 = kp[0].split()
     inf2 = kp[1].split()
-
-    channel = 'MX' + all_conf.config['wavefield_channel']
-
+    input_file_list = []
     # station names
-    if all_conf.ignore_network:
-        sta1 = "*.{}..{}".format(*(inf1[1:2] + [channel]))
-        sta2 = "*.{}..{}".format(*(inf2[1:2] + [channel]))
-    else:
-        sta1 = "{}.{}..{}".format(*(inf1[0:2] + [channel]))
-        sta2 = "{}.{}..{}".format(*(inf2[0:2] + [channel]))
-
-    # Wavefield files
-    if not insta:
-        dir = os.path.join(all_conf.config['project_path'], 'greens')
-        wf1 = glob(os.path.join(dir, sta1 + '.h5'))[0]
-        wf2 = glob(os.path.join(dir, sta2 + '.h5'))[0]
-    else:
-        # need to return two receiver coordinate pairs.
-        # For buried sensors, depth could be used but no elevation is possible,
-        # so maybe keep everything at 0 m?
-        # lists of information directly from the stations.txt file.
-        wf1 = inf1
-        wf2 = inf2
-
-    iteration_dir = os.path.join(all_conf.source_config['source_path'],
-                                 'iteration_' + str(all_conf.step))
-    # Adjoint source
-    if all_conf.measr_config['mtype'] in ['energy_diff']:
-        adj_src_basicnames = [os.path.join(iteration_dir, 'adjt',
-                                           "{}--{}.c".format(sta1, sta2)),
-                              os.path.join(iteration_dir, 'adjt',
-                                           "{}--{}.a".format(sta1, sta2))]
-    else:
-        adj_src_basicnames = [os.path.join(iteration_dir, 'adjt',
-                                           "{}--{}".format(sta1, sta2))]
-
-    return(wf1, wf2, adj_src_basicnames)
+    for chas in all_conf.output_channels:
+        if all_conf.ignore_network:
+            sta1 = "*.{}..MX{}".format(*(inf1[1:2] + [chas[0]]))
+            sta2 = "*.{}..MX{}".format(*(inf2[1:2] + [chas[1]]))
+        else:
+            sta1 = "{}.{}..MX{}".format(*(inf1[0:2] + [chas[0]]))
+            sta2 = "{}.{}..MX{}".format(*(inf2[0:2] + [chas[1]]))
 
 
-def add_output_file(kp, all_conf, insta=False):
+        # basic wave fields are not rotated to Z, R, T
+        # so correct the input file name
+        if all_conf.source_config["rotate_horizontal_components"]:
+            sta1 = re.sub("MXT", "MXE", sta1)
+            sta2 = re.sub("MXT", "MXE", sta2)
+            sta1 = re.sub("MXR", "MXN", sta1)
+            sta2 = re.sub("MXR", "MXN", sta2)
 
-    id1 = kp[0].split()[0] + kp[0].split()[1]
-    id2 = kp[1].split()[0] + kp[1].split()[1]
+        # Wavefield files
+        if not insta:
+            dir = os.path.join(all_conf.config['project_path'], 'greens')
+            print(os.path.join(dir, sta1 + '.h5'))
+            wf1 = glob(os.path.join(dir, sta1 + '.h5'))[0]
+            wf2 = glob(os.path.join(dir, sta2 + '.h5'))[0]
+        else:
+            # need to return two receiver coordinate pairs.
+            # lists of information directly from the stations.txt file.
+            wf1 = inf1
+            wf2 = inf2
 
-    if id1 < id2:
-        inf1 = kp[0].split()
-        inf2 = kp[1].split()
-    else:
-        inf2 = kp[0].split()
-        inf1 = kp[1].split()
+        iteration_dir = os.path.join(all_conf.source_config['source_path'],
+                                     'iteration_' + str(all_conf.step))
 
-    channel = 'MX' + all_conf.config['wavefield_channel']
-    sta1 = "{}.{}..{}".format(*(inf1[0:2] + [channel]))
-    sta2 = "{}.{}..{}".format(*(inf2[0:2] + [channel]))
+        # go back for adjt source
+        if all_conf.source_config["rotate_horizontal_components"]:
+            sta1 = re.sub("MXE", "MXT", sta1)
+            sta2 = re.sub("MXE", "MXT", sta2)
+            sta1 = re.sub("MXN", "MXR", sta1)
+            sta2 = re.sub("MXN", "MXR", sta2)
+        # Adjoint source
+        if all_conf.measr_config['mtype'] in ['energy_diff']:
+            adj_src_basicnames = [os.path.join(iteration_dir, 'adjt',
+                                               "{}--{}.c".format(sta1, sta2)),
+                                  os.path.join(iteration_dir, 'adjt',
+                                               "{}--{}.a".format(sta1, sta2))]
+        else:
+            adj_src_basicnames = [os.path.join(iteration_dir, 'adjt',
+                                               "{}--{}".format(sta1, sta2))]
 
-    kern_basicname = "{}--{}".format(sta1, sta2)
-    kern_basicname = os.path.join(all_conf.source_config['source_path'],
-                                  'iteration_' + str(all_conf.step), 'kern',
-                                  kern_basicname)
-    return (kern_basicname)
+
+        input_file_list.append([wf1, wf2, adj_src_basicnames])
+    return(input_file_list)
 
 
-def compute_kernel(input_files, all_conf, nsrc, all_ns, taper,
-                   insta=False):
-
-    ntime, n, n_corr, Fs = all_ns
-    wf1, wf2, adjt = input_files
-########################################################################
-# Prepare filenames and adjoint sources
-########################################################################
+def open_adjoint_sources(all_conf, adjt, n_corr):
 
     adjt_srcs = []
 
@@ -117,11 +119,52 @@ def compute_kernel(input_files, all_conf, nsrc, all_ns, taper,
         if len(f) > 0:
             adjt_srcs.append(f)
         else:
-            return None
+            adjt_srcs.append(None)
+    return(adjt_srcs)
+
+
+def add_output_files(kp, all_conf, insta=False):
+
+    kern_files = []
+    id1 = kp[0].split()[0] + kp[0].split()[1]
+    id2 = kp[1].split()[0] + kp[1].split()[1]
+
+    if id1 < id2:
+        inf1 = kp[0].split()
+        inf2 = kp[1].split()
+    else:
+        inf2 = kp[0].split()
+        inf1 = kp[1].split()
+
+    for chas in all_conf.output_channels:
+        channel1 = "MX" + chas[0]
+        channel2 = "MX" + chas[1]
+        sta1 = "{}.{}..{}".format(*(inf1[0:2] + [channel1]))
+        sta2 = "{}.{}..{}".format(*(inf2[0:2] + [channel2]))
+
+        kern_basicname = "{}--{}".format(sta1, sta2)
+        kern_basicname = os.path.join(all_conf.source_config['source_path'],
+                                      'iteration_' + str(all_conf.step),
+                                      'kern', kern_basicname)
+        kern_files.append(kern_basicname)
+    return (kern_files)
+
+
+def compute_kernel(input_files, output_file, all_conf, nsrc, all_ns, taper,
+                   insta=False):
+
+    ntime, n, n_corr, Fs = all_ns
+    wf1, wf2, adjt = input_files
+########################################################################
+# Prepare filenames and adjoint sources
+########################################################################
+    adjt_srcs = open_adjoint_sources(all_conf, adjt, n_corr)
+
 
     # Uniform spatial weights. (current model is in the adjoint source)
     nsrc.distr_basis = np.ones(nsrc.distr_basis.shape)
     ntraces = nsrc.src_loc[0].shape[0]
+    [comp1, comp2] = [wf1, wf2] # keep these strings in case need to be rotated
 
     if insta:
         # open database
@@ -152,6 +195,10 @@ def compute_kernel(input_files, all_conf, nsrc, all_ns, taper,
     kern = np.zeros((nsrc.spect_basis.shape[0],
                      all_conf.filtcnt, ntraces, len(adjt)))
 
+    if all_conf.source_config["rotate_horizontal_components"]:
+        tempfile = output_file + ".h5_temp"
+        temp = wf1.copy_setup(tempfile, ntraces=ntraces, nt=n_corr)
+
     # Loop over locations
     print_each_n = max(5, round(max(ntraces // 5, 1), -1))
     for i in range(ntraces):
@@ -166,7 +213,6 @@ def compute_kernel(input_files, all_conf, nsrc, all_ns, taper,
             # The spectrum has 0 phase so only checking
             # absolute value here
             continue
-
         if insta:
             # get source locations
             lat_src = geograph_to_geocent(nsrc.src_loc[1, i])
@@ -187,6 +233,9 @@ def compute_kernel(input_files, all_conf, nsrc, all_ns, taper,
             if not wf1.fdomain:
                 s1 = np.ascontiguousarray(wf1.data[i, :] * taper)
                 s2 = np.ascontiguousarray(wf2.data[i, :] * taper)
+                # if horizontal component rotation: perform it here
+                # more convenient before FFT to avoid additional FFTs
+                
                 spec1 = np.fft.rfft(s1, n)
                 spec2 = np.fft.rfft(s2, n)
             else:
@@ -195,15 +244,14 @@ def compute_kernel(input_files, all_conf, nsrc, all_ns, taper,
 
         g1g2_tr = np.multiply(np.conjugate(spec1), spec2)
         # spectrum
-
         for ix_spec in range(nsrc.spect_basis.shape[0]):
             c = np.multiply(g1g2_tr, nsrc.spect_basis[ix_spec, :])
             ###################################################################
             # Get Kernel at that location
             ###################################################################
-            corr_temp = my_centered(np.fft.fftshift(np.fft.irfft(c, n)),
-                                    n_corr)
-
+            ctemp = np.fft.fftshift(np.fft.irfft(c, n))
+            corr_temp = my_centered(ctemp, n_corr)
+            temp.data[i, :] = corr_temp
             ###################################################################
             # Apply the 'adjoint source'
             ###################################################################
@@ -224,6 +272,7 @@ def compute_kernel(input_files, all_conf, nsrc, all_ns, taper,
         wf1.file.close()
         wf2.file.close()
 
+    temp.file.close()
     return kern
 
 
@@ -303,20 +352,30 @@ def run_kern(args, comm, size, rank):
     with NoiseSource(nsrc) as nsrc:
         for kp in kernel_tasks:
             try:
-                input_files = add_input_files(kp, all_conf)
-                output_file = add_output_file(kp, all_conf)
+                input_file_list = add_input_files(kp, all_conf)
+                output_files = add_output_files(kp, all_conf)
             except (IOError, IndexError):
-                if all_conf.config['verbose']:
-                    print('Could not find input for: %s\
+               if all_conf.config['verbose']:
+                   print('Could not find input for: %s\
 \nCheck if wavefield .h5 file and base_model file are available.' % kp)
-                continue
+               continue
 
-            kern = compute_kernel(input_files, all_conf, nsrc, all_ns, taper)
-            if kern is None:
-                continue
+            for i, input_files in enumerate(input_file_list):
+                kern = compute_kernel(input_files, output_files[i], all_conf, nsrc,
+                                      all_ns, taper)
+                if kern is None:
+                    continue
 
-            for ix_f in range(all_conf.filtcnt):
-                if kern[:, ix_f, :, :].sum() != 0:
-                    filename = output_file + '.{}.npy'.format(ix_f)
-                    np.save(filename, kern[:, ix_f, :, :])
+                for ix_f in range(all_conf.filtcnt):
+                    if kern[:, ix_f, :, :].sum() != 0:
+                        filename = output_files[i] + '.{}.npy'.format(ix_f)
+                        np.save(filename, kern[:, ix_f, :, :])
+                    # rotation?
+                    if all_conf.source_config["rotate_horizontal_components"]:
+                        # - find the respective adjoint source
+                        adjt_srcs = open_adjoint_sources(all_conf, input_files[2],
+                                                         all_ns[2])
+                        # - find 3 temp files
+                        # - for each trace: rotate and apply adjoint source; sum; save
+
     return()

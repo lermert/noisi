@@ -68,7 +68,6 @@ class WaveField(object):
         if nt is not None:
             shape[1] = nt
         shape = tuple(shape)
-
         # Create new file
         file = h5py.File(newfile, 'w-')
 
@@ -87,7 +86,7 @@ class WaveField(object):
         print('Copied setup of ' + self.file.filename)
         file.close()
 
-        return(WaveField(newfile, w=w, fdomain=self.fdomain))
+        return(WaveField(newfile, w=w))
 
     def truncate(self, newfile, truncate_after_seconds):
 

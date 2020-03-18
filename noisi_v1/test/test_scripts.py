@@ -15,7 +15,7 @@ import os
 from noisi_v1.util.corr_pairs import define_correlationpairs
 from noisi_v1 import NoiseSource
 from obspy.signal.invsim import cosine_taper
-from noisi_v1.scripts.kernel import define_kernel_tasks, compute_kernel
+from noisi_v1.scripts.kernel import define_kernel_tasks, compute_kernel, get_additional_wavefield
 from noisi_v1.scripts.kernel import add_input_files as input_files_kernel
 from mpi4py import MPI
 
@@ -217,6 +217,7 @@ def test_forward_model():
                                       'NET.STA1..MXZ--NET.STA2..MXZ.npy'))
 
     assert np.allclose(correlation, corr_saved)
+
 
 
 def test_sensitivity_kernel():

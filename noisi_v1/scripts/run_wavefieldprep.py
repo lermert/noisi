@@ -64,12 +64,19 @@ class precomp_wavefield(object):
  choose \'instaseis\' or \'analytic\'.')
         else:
             raise ValueError('Unknown wavefield_type ' +
-                             config['wavefield_type'])
+                             config['wavefield_type'] +
+                             " select \"instaseis\" or \"analytic\"")
 
     def precompute(self):
         stations = list(self.stations.iterrows())
+        channel = self.config['wavefield_channel']
+        if channel == "all":
+            channels = ['E', 'N', 'Z']
+        else:
+            channels = [channel]
         for i, station in stations[self.rank: len(self.stations): self.size]:
-            self.function(station)
+            for cha in channels:
+                self.function(station, channel=cha)
 
         if self.rank == 0:
             wfile = glob(os.path.join(self.args.project_path,
@@ -92,7 +99,10 @@ class precomp_wavefield(object):
 
         if self.config['wavefield_domain'] == 'fourier':
             self.fdomain = True
-            self.npad = 2 * self.npts - 2
+            if self.npts % 2 == 1:
+                self.npad = 2 * self.npts - 2
+            else:
+                self.npad = 2 * self.npts
         elif self.config['wavefield_domain'] == 'time':
             self.fdomain = False
             self.npad = next_fast_len(2 * self.npts - 1)
@@ -134,7 +144,7 @@ reset to 95\% of Nyquist freq.")
                                                dt=1. / self.Fs)
                 self.npts = test[0].stats.npts
 
-    def green_from_instaseis(self, station):
+    def green_from_instaseis(self, station, channel):
 
         # set some parameters
         lat_sta = station['lat']
@@ -143,21 +153,13 @@ reset to 95\% of Nyquist freq.")
         lon_sta = float(lon_sta)
         rec = instaseis.Receiver(latitude=lat_sta, longitude=lon_sta)
         point_f = float(self.config['wavefield_point_force'])
-
-        channel = self.config['wavefield_channel']
         station_id = station['net'] + '.' + station['sta'] + '..MX' + channel
 
         if self.config['verbose']:
             print(station_id)
 
-        if channel == 'Z':
-            c_index = 0
-        elif channel == 'R':
-            c_index = 1
-        elif channel == 'T':
-            c_index = 2
-        else:
-            raise ValueError("Unknown channel: %s, choose R, T, Z"
+        if channel not in ['Z', 'N', 'E']:
+            raise ValueError("Unknown channel: %s, choose E, N, Z"
                              % channel)
 
         # initialize the file
@@ -217,15 +219,10 @@ reset to 95\% of Nyquist freq.")
                 else:
                     raise ValueError('Unknown data quantity. \
 Choose DIS, VEL or ACC in configuration.')
-                if channel in ['R', 'T']:
-                    baz = gps2dist_azimuth(lat_src, lon_src,
-                                           lat_sta, lon_sta)[2]
-                    values.rotate('NE->RT', baz)
 
+                trace = values.select(component=channel)[0].data
                 if self.filter is not None:
-                    trace = lfilter(*self.filter, x=values[c_index].data)
-                else:
-                    trace = values[c_index].data
+                    trace = lfilter(*self.filter, x=trace)
 
                 if self.fdomain:
                     trace_fd = np.fft.rfft(trace[0: self.npts],
@@ -259,7 +256,11 @@ Choose DIS, VEL or ACC in configuration.')
 
         return(g_fd)
 
-    def green_analytic(self, station, verbose=False):
+    def green_analytic(self, station, channel):
+
+        if channel in ["E", "N"]:
+            raise ValueError("Analytic Green's function approach is \
+invalid for horizontal components; set channel to \"Z\" or use instaseis.")
 
         # set some parameters
         lat_sta = station['lat']
