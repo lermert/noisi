@@ -22,21 +22,21 @@ except ImportError:
     pass
 
 
-# def perform_rotation(rot_task, projdir, s1, s2, sta1, sta2):
+def perform_rotation(rot_task, projdir, s1, s2, sta1, sta2):
 
-#     # find the station station backazimuth
-#     datfile = os.path.join(projdir, "stationlist.csv")
-#     dat = read_csv(datfile)
-#     lat1 = float(dat[dat.sta == sta1]["lat"])
-#     lon1 = float(dat[dat.sta == sta1]["lon"])
-#     lat2 = float(dat[dat.sta == sta2]["lat"])
-#     lon2 = float(dat[dat.sta == sta2]["lat"])
-#     baz = radians(gps2dist_azimuth(lat1, lon1, lat2, lon2)[2])
+    # find the station station backazimuth
+    datfile = os.path.join(projdir, "stationlist.csv")
+    dat = read_csv(datfile)
+    lat1 = float(dat[dat.sta == sta1]["lat"])
+    lon1 = float(dat[dat.sta == sta1]["lon"])
+    lat2 = float(dat[dat.sta == sta2]["lat"])
+    lon2 = float(dat[dat.sta == sta2]["lat"])
+    baz = radians(gps2dist_azimuth(lat1, lon1, lat2, lon2)[2])
 
-#     if rot_task == "NR":
-#         return(-cos(baz) * s1 - sin(baz) * s2)
-#     elif rot_task == "ET":
-#         return(sin(baz) * s2 - cos(baz) * s1)
+    if rot_task == "NR":
+        return(-cos(baz) * s1 - sin(baz) * s2)
+    elif rot_task == "ET":
+        return(sin(baz) * s2 - cos(baz) * s1)
 
 
 
@@ -159,15 +159,12 @@ def compute_kernel(input_files, output_file, all_conf, nsrc, all_ns, taper,
 # Prepare filenames and adjoint sources
 ########################################################################
     adjt_srcs = open_adjoint_sources(all_conf, adjt, n_corr)
-    if None in adjt_srcs:
-        return(None)
-    else:
-        print("========================================")
-        print("Computing: " + output_file)
+
+
     # Uniform spatial weights. (current model is in the adjoint source)
     nsrc.distr_basis = np.ones(nsrc.distr_basis.shape)
     ntraces = nsrc.src_loc[0].shape[0]
-    # [comp1, comp2] = [wf1, wf2] # keep these strings in case need to be rotated
+    [comp1, comp2] = [wf1, wf2] # keep these strings in case need to be rotated
 
     if insta:
         # open database
@@ -200,15 +197,7 @@ def compute_kernel(input_files, output_file, all_conf, nsrc, all_ns, taper,
 
     if all_conf.source_config["rotate_horizontal_components"]:
         tempfile = output_file + ".h5_temp"
-        print(tempfile)
-        print("+++++++++++++++++++++++++++++++++")
         temp = wf1.copy_setup(tempfile, ntraces=ntraces, nt=n_corr)
-        map_temp_datasets = {0: temp.data}
-        for ix_spec in range(1, nsrc.spect_basis.shape[0]):
-            dtmp = temp.file.create_dataset('data{}'.format(ix_spec),
-                                            temp.data.shape,
-                                            dtype=np.float32)
-            map_temp_datasets[ix_spec] = dtmp
 
     # Loop over locations
     print_each_n = max(5, round(max(ntraces // 5, 1), -1))
@@ -246,6 +235,7 @@ def compute_kernel(input_files, output_file, all_conf, nsrc, all_ns, taper,
                 s2 = np.ascontiguousarray(wf2.data[i, :] * taper)
                 # if horizontal component rotation: perform it here
                 # more convenient before FFT to avoid additional FFTs
+                
                 spec1 = np.fft.rfft(s1, n)
                 spec2 = np.fft.rfft(s2, n)
             else:
@@ -261,8 +251,7 @@ def compute_kernel(input_files, output_file, all_conf, nsrc, all_ns, taper,
             ###################################################################
             ctemp = np.fft.fftshift(np.fft.irfft(c, n))
             corr_temp = my_centered(ctemp, n_corr)
-            map_temp_datasets[ix_spec][i, :] = corr_temp
-
+            temp.data[i, :] = corr_temp
             ###################################################################
             # Apply the 'adjoint source'
             ###################################################################
@@ -284,7 +273,6 @@ def compute_kernel(input_files, output_file, all_conf, nsrc, all_ns, taper,
         wf2.file.close()
 
     temp.file.close()
-    print("-------------------------------")
     return kern
 
 
@@ -373,8 +361,7 @@ def run_kern(args, comm, size, rank):
                continue
 
             for i, input_files in enumerate(input_file_list):
-                kern = compute_kernel(input_files, output_files[i], all_conf,
-                                      nsrc,
+                kern = compute_kernel(input_files, output_files[i], all_conf, nsrc,
                                       all_ns, taper)
                 if kern is None:
                     continue
@@ -383,42 +370,12 @@ def run_kern(args, comm, size, rank):
                     if kern[:, ix_f, :, :].sum() != 0:
                         filename = output_files[i] + '.{}.npy'.format(ix_f)
                         np.save(filename, kern[:, ix_f, :, :])
-                    else:
-                        continue
-
-            # Rotation
-        if all_conf.source_config["rotate_horizontal_components"]:
-            for kp in kernel_tasks:
-                try:
-                    input_file_list = add_input_files(kp, all_conf)
-                    output_files = add_output_files(kp, all_conf)
-                except (IOError, IndexError):
-                    continue
-
-                    # check if it's done already
-                    tempfile = output_files[i] + ".h5_temp"
-                    if not os.path.exists(tempfile):
-                        break
-
-                    # - get all the adjoint sources:
-                    # for all channels, all filter bands, both branches
-                    adjt_srcs = []
-                    for infile in input_file_list:
-                        adjt_srcs.append(open_adjoint_sources(all_conf,
-                                                              input_files[2],
-                                                              all_ns[2]))
-
-                    # - open 9 temp files
-                    print(kp[0], kp[1])
-                    # k_temp_n = WaveField(temp_n)
-                    # k_temp_e = WaveField(temp_e)
-                    # k_temp_z = WaveField(temp_z)
-                    # for ix_f in range(all_conf.filtcnt):
-                    #     print(k_temp_e, k_temp_n, k_temp_z)
-                    #     assemble_rotated_kernel(k_temp_z, k_temp_n,
-                    #                             k_temp_e,
-                    #                             output_files[i],
-                    #                             adjt_srcs)
-
+                    # rotation?
+                    if all_conf.source_config["rotate_horizontal_components"]:
+                        # - find the respective adjoint source
+                        adjt_srcs = open_adjoint_sources(all_conf, input_files[2],
+                                                         all_ns[2])
+                        # - find 3 temp files
+                        # - for each trace: rotate and apply adjoint source; sum; save
 
     return()

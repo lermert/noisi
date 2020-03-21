@@ -2,6 +2,7 @@ from obspy.geodetics import gps2dist_azimuth
 from math import sin, cos, radians
 from obspy import read
 from pandas import read_csv
+from glob import glob
 import os
 import numpy as np
 
@@ -14,9 +15,7 @@ def rotation_matrix(baz):
     rot_et = -cos(baz_rad)
     rot_nt = sin(baz_rad)
 
-    #return(rot_nr, rot_nt, rot_er, rot_et)
-    return(np.asarray([[1, 0, 0], [0, rot_nr, rot_nt], [0, rot_er, rot_et]]))
-
+    return(rot_nr, rot_nt, rot_er, rot_et)
 
 def add_metadata(tr, seedid1, seedid2, lat1, lat2, lon1, lon2):
 
@@ -54,17 +53,13 @@ def apply_rotation(fls, stationlistfile, output_directory):
     c_nz = read(fls[5])[0]
     c_ze = read(fls[6])[0]
     c_zn = read(fls[7])[0]
-    c_zz = read(fls[8])[0]
-    C = np.asarray([[c_zz, c_zn, c_ze],
-                    [c_nz, c_nn, c_ne],
-                    [c_ez, c_en, c_ee]])
+
     # get locations
     meta = read_csv(stationlistfile)
 
     net1, sta1, loc1, cha1 = os.path.basename(fls[0]).split('.')[0: 4]
     try:
-        net2, sta2, loc2, cha2 = os.path.basename(fls[0]).\
-            split('--')[1].split('.')[0: 4]
+        net2, sta2, loc2, cha2 = os.path.basename(fls[0]).split('--')[1].split('.')[0: 4]
     except IndexError:
         net2, sta2, loc2, cha2 = os.path.basename(fls[0]).split('.')[4: 8]
 
@@ -79,37 +74,38 @@ def apply_rotation(fls, stationlistfile, output_directory):
     baz = gps2dist_azimuth(lat1, lon1, lat2, lon2)[2]
 
     # get rotation matrix
-    #(m_nr, m_nt, m_er, m_et) = rotation_matrix(baz)
-    G = rotation_matrix(baz)
-    # recombine
-    # c_rr_data = m_nr ** 2 * c_nn.data + m_er ** 2 * c_ee.data + (m_nr * m_er) * (c_ne.data + c_en.data)
-    # c_tt_data = m_nt ** 2 * c_nn.data + m_et ** 2 * c_ee.data + (m_nt * m_et) * (c_ne.data + c_en.data)
-    # c_rt_data = m_nr * m_nt * c_nn.data + m_nr * m_et * c_ne.data + m_er * m_nt * c_en.data + m_er * m_et * c_ee.data
-    # c_tr_data = m_nr * m_nt * c_nn.data + m_nt * m_er * c_ne.data + m_et * m_nr * c_en.data + m_er * m_et * c_ee.data
+    (m_nr, m_nt, m_er, m_et) = rotation_matrix(baz)
     
-    # c_zr_data = m_nr * c_zn.data + m_er * c_ze.data
-    # c_zt_data = m_nt * c_zn.data + m_et * c_ze.data
-    # c_rz_data = m_nr * c_nz.data + m_er * c_ez.data
-    # c_tz_data = m_nt * c_nz.data + m_et * c_ez.data
-    C_rot = np.matmul(np.matmul(G, C), np.transpose(G))
+    # recombine
+    c_rr_data = m_nr ** 2 * c_nn.data + m_er ** 2 * c_ee.data + (m_nr * m_er) * (c_ne.data + c_en.data)
+    c_tt_data = m_nt ** 2 * c_nn.data + m_et ** 2 * c_ee.data + (m_nt * m_et) * (c_ne.data + c_en.data)
+    c_rt_data = m_nr * m_nt * c_nn.data + m_nr * m_et * c_ne.data + m_er * m_nt * c_en.data + m_er * m_et * c_ee.data
+    c_tr_data = m_nr * m_nt * c_nn.data + m_nt * m_er * c_ne.data + m_et * m_nr * c_en.data + m_er * m_et * c_ee.data
+    
+    c_zr_data = m_nr * c_zn.data + m_er * c_ze.data
+    c_zt_data = m_nt * c_zn.data + m_et * c_ze.data
+    c_rz_data = m_nr * c_nz.data + m_er * c_ez.data
+    c_tz_data = m_nt * c_nz.data + m_et * c_ez.data
+
 
     tr_rr = c_nn.copy()
     tr_tt = c_ee.copy()
     tr_rt = c_ne.copy()
     tr_tr = c_en.copy()
+
     tr_zr = c_zn.copy()
     tr_zt = c_ze.copy()
     tr_rz = c_nz.copy()
     tr_tz = c_ez.copy()
 
-    tr_rr.data = C_rot[1, 1]  # c_rr_data
-    tr_tt.data = C_rot[2, 2]  # c_tt_data
-    tr_rt.data = C_rot[1, 2]  # c_rt_data
-    tr_tr.data = C_rot[2, 1]  # c_tr_data
-    tr_zt.data = C_rot[0, 1]  # c_zt_data
-    tr_zr.data = C_rot[0, 2]  # c_zr_data
-    tr_tz.data = C_rot[1, 0]  # c_tz_data
-    tr_rz.data = C_rot[2, 0]  # c_rz_data
+    tr_rr.data = c_rr_data
+    tr_tt.data = c_tt_data
+    tr_rt.data = c_rt_data
+    tr_tr.data = c_tr_data
+    tr_zt.data = c_zt_data
+    tr_zr.data = c_zr_data
+    tr_tz.data = c_tz_data
+    tr_rz.data = c_rz_data
 
     # copy / add metadata
     seedid1 = "{}.{}.{}.".format(net1, sta1, loc1)
