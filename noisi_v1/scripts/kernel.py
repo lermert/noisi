@@ -200,8 +200,6 @@ def compute_kernel(input_files, output_file, all_conf, nsrc, all_ns, taper,
 
     if all_conf.source_config["rotate_horizontal_components"]:
         tempfile = output_file + ".h5_temp"
-        print(tempfile)
-        print("+++++++++++++++++++++++++++++++++")
         temp = wf1.copy_setup(tempfile, ntraces=ntraces, nt=n_corr)
         map_temp_datasets = {0: temp.data}
         for ix_spec in range(1, nsrc.spect_basis.shape[0]):
