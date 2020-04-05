@@ -14,6 +14,7 @@ from obspy.geodetics import gps2dist_azimuth
 from warnings import warn
 from noisi_v1.util.windows import my_centered
 from noisi_v1.util.geo import geograph_to_geocent
+from noisi_v1.scripts.rotate_kernel import assemble_rotated_kernel
 from noisi_v1.util.corr_pairs import define_correlationpairs, rem_no_obs
 from noisi_v1.scripts.correlation import config_params, get_ns
 try:
@@ -25,7 +26,7 @@ except ImportError:
 # def perform_rotation(rot_task, projdir, s1, s2, sta1, sta2):
 
 #     # find the station station backazimuth
-#     datfile = os.path.join(projdir, "stationlist.csv")
+#     datfile = os.path.join(projdir, "stationlist.csv")https://www.sueddeutsche.de/politik/coronavirus-infektionsschutzgesetz-thorsten-kingreen-jens-spahn-1.4857021?reduced=true
 #     dat = read_csv(datfile)
 #     lat1 = float(dat[dat.sta == sta1]["lat"])
 #     lon1 = float(dat[dat.sta == sta1]["lon"])
@@ -66,7 +67,6 @@ def add_input_files(kp, all_conf, insta=False):
         # Wavefield files
         if not insta:
             dir = os.path.join(all_conf.config['project_path'], 'greens')
-            print(os.path.join(dir, sta1 + '.h5'))
             wf1 = glob(os.path.join(dir, sta1 + '.h5'))[0]
             wf2 = glob(os.path.join(dir, sta2 + '.h5'))[0]
         else:
@@ -259,7 +259,8 @@ def compute_kernel(input_files, output_file, all_conf, nsrc, all_ns, taper,
             ###################################################################
             ctemp = np.fft.fftshift(np.fft.irfft(c, n))
             corr_temp = my_centered(ctemp, n_corr)
-            map_temp_datasets[ix_spec][i, :] = corr_temp
+            if all_conf.source_config["rotate_horizontal_components"]:
+                map_temp_datasets[ix_spec][i, :] = corr_temp
 
             ###################################################################
             # Apply the 'adjoint source'
@@ -281,8 +282,8 @@ def compute_kernel(input_files, output_file, all_conf, nsrc, all_ns, taper,
         wf1.file.close()
         wf2.file.close()
 
-    temp.file.close()
-    print("-------------------------------")
+    if all_conf.source_config["rotate_horizontal_components"]:
+        temp.file.close()
     return kern
 
 
@@ -378,11 +379,12 @@ def run_kern(args, comm, size, rank):
                     continue
 
                 for ix_f in range(all_conf.filtcnt):
-                    if kern[:, ix_f, :, :].sum() != 0:
-                        filename = output_files[i] + '.{}.npy'.format(ix_f)
-                        np.save(filename, kern[:, ix_f, :, :])
-                    else:
-                        continue
+                    if not all_conf.source_config["rotate_horizontal_components"]:
+                        if kern[:, ix_f, :, :].sum() != 0:
+                            filename = output_files[i] + '.{}.npy'.format(ix_f)
+                            np.save(filename, kern[:, ix_f, :, :])
+                        else:
+                            continue
 
             # Rotation
         if all_conf.source_config["rotate_horizontal_components"]:
@@ -390,33 +392,33 @@ def run_kern(args, comm, size, rank):
                 try:
                     input_file_list = add_input_files(kp, all_conf)
                     output_files = add_output_files(kp, all_conf)
+
                 except (IOError, IndexError):
                     continue
 
-                    # check if it's done already
-                    tempfile = output_files[i] + ".h5_temp"
-                    if not os.path.exists(tempfile):
-                        break
+                output_files = [re.sub("MXE", "MXT", of) for of in output_files]            
+                output_files = [re.sub("MXN", "MXR", of) for of in output_files]            
+                # - get all the adjoint sources:
+                # for all channels, all filter bands, both branches
+                adjt_srcs = []
+                for infile in input_file_list:
+                    adjt_srcs.append(open_adjoint_sources(all_conf,
+                                                          infile[2],
+                                                          all_ns[2]))
+                # - open 9 temp files
+                if all_conf.source_config["rotate_horizontal_components"]:
+                    it_dir = os.path.join(all_conf.source_config['project_path'],
+                                          all_conf.source_config['source_name'],
+                                          'iteration_' + str(all_conf.step))
+                    tfname = os.path.join(it_dir, "kern", "*{}*{}*_temp".format(
+                        kp[0].split()[1].strip(), kp[1].split()[1].strip()))
+                    kern_temp_files = glob(tfname)
+                    if kern_temp_files == []:
+                        continue
 
-                    # - get all the adjoint sources:
-                    # for all channels, all filter bands, both branches
-                    adjt_srcs = []
-                    for infile in input_file_list:
-                        adjt_srcs.append(open_adjoint_sources(all_conf,
-                                                              input_files[2],
-                                                              all_ns[2]))
-
-                    # - open 9 temp files
-                    print(kp[0], kp[1])
-                    # k_temp_n = WaveField(temp_n)
-                    # k_temp_e = WaveField(temp_e)
-                    # k_temp_z = WaveField(temp_z)
-                    # for ix_f in range(all_conf.filtcnt):
-                    #     print(k_temp_e, k_temp_n, k_temp_z)
-                    #     assemble_rotated_kernel(k_temp_z, k_temp_n,
-                    #                             k_temp_e,
-                    #                             output_files[i],
-                    #                             adjt_srcs)
-
-
+                    kern_temp_files.sort()
+                    if len(kern_temp_files) == 9:
+                        assemble_rotated_kernel(kern_temp_files, output_files, adjt_srcs,
+                                            os.path.join(all_conf.source_config["project_path"], 
+                                                         "stationlist.csv"))
     return()

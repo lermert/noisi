@@ -15,7 +15,7 @@ import os
 from noisi_v1.util.corr_pairs import define_correlationpairs
 from noisi_v1 import NoiseSource
 from obspy.signal.invsim import cosine_taper
-from noisi_v1.scripts.kernel import define_kernel_tasks, compute_kernel, get_additional_wavefield
+from noisi_v1.scripts.kernel import define_kernel_tasks, compute_kernel
 from noisi_v1.scripts.kernel import add_input_files as input_files_kernel
 from mpi4py import MPI
 
@@ -202,7 +202,7 @@ def test_forward_model():
     assert len(p) == 3
     assert p[0][0].split()[-1] == 'STA1'
 
-    input_files = add_input_files(p[1], all_config)
+    input_files = add_input_files(p[1], all_config)[0]
     assert os.path.basename(input_files[0]) == 'NET.STA1..MXZ.h5'
 
     nsrc = os.path.join('test', 'testdata_v1', 'testsource_v1', 'iteration_0',
@@ -240,11 +240,12 @@ def test_sensitivity_kernel():
 
     nsrc = os.path.join('test', 'testdata_v1', 'testsource_v1',
                         'spectral_model.h5')
+    output_file = "test"
     # use a one-sided taper: The seismogram probably has a non-zero end,
     # being cut off wherever the solver stopped running.
     taper = cosine_taper(ns[0], p=0.01)
     taper[0: ns[0] // 2] = 1.0
-    kernel = compute_kernel(input_files, all_config,
+    kernel = compute_kernel(input_files[0], output_file, all_config,
                             NoiseSource(nsrc), ns, taper)
 
     saved_kernel = np.load(os.path.join('test', 'testdata_v1', 'testdata',

@@ -99,12 +99,9 @@ def apply_rotation(fls, stationlistfile, output_directory):
     baz = gps2dist_azimuth(lat1, lon1, lat2, lon2)[2]
 
     # get rotation matrix
-    #(m_nr, m_nt, m_er, m_et) = rotation_matrix(baz)
     G = rotation_matrix(baz)
     # recombine
     C_rot = np.matmul(np.matmul(G.T, C), G)
-    #C_rot = np.matmul(np.transpose(G), first_rot)
-    print(C_rot.shape)
 
     tr_rr = c_nn.copy()
     tr_tt = c_ee.copy()

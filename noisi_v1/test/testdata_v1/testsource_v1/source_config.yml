@@ -3,6 +3,7 @@ source_name: testsource_v1
 source_path: ./test/testdata_v1/testsource_v1
 date_created: 2019.06.12
 get_auto_corr: true
+rotate_horizontal_components: false
 model_observed_only: false
 max_lag: 100
 source_setup_file: ./test/testdata_v1/testsource_v1/source_setup_parameters.yml

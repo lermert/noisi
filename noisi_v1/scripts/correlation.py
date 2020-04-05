@@ -63,8 +63,8 @@ class config_params(object):
         # else:
         #     self.output_channels = [2 * self.config["wavefield_channel"]]
         if self.config['wavefield_channel'] == "all":
-            self.output_channels = ["ZZ", "EE", "NN", "ZE", "EZ", "ZN",
-                                    "NZ", "NE", "EN"]
+            self.output_channels = ["ZZ", "ZN", "ZE", "NZ", "NN", "NE",
+                                    "EZ", "EN", "EE"]
         else:
             self.output_channels = [2 * self.config["wavefield_channel"]]
 
@@ -429,13 +429,21 @@ def run_corr(args, comm, size, rank):
                                        output_files[i], all_ns[3])
 
             if all_conf.source_config["rotate_horizontal_components"]:
-               fls = glob(os.path.join(it_dir, "corr", "*{}*{}*.sac".format(cp[0].split()[1],
+                fls = glob(os.path.join(it_dir, "corr", "*{}*{}*.sac".format(cp[0].split()[1],
                                                                             cp[1].split()[1])))
-               fls.sort()
-               print(fls)
-               apply_rotation(fls,
-                   stationlistfile=os.path.join(all_conf.source_config['project_path'],
-                   "stationlist.csv"), 
-                   output_directory=os.path.join(it_dir, "corr"))
+                fls.sort()
+                apply_rotation(fls,
+                               stationlistfile=os.path.join(all_conf.source_config['project_path'],
+                               "stationlist.csv"), output_directory=os.path.join(it_dir, "corr"))
+
+    comm.barrier()
+    if rank == 0:
+        if all_conf.source_config["rotate_horizontal_components"]:
+            fls_to_remove = glob(os.path.join(it_dir, "corr", "*MX[E,N]*MX[E,N]*.sac"))
+            fls_to_remove.extend(glob(os.path.join(it_dir, "corr", "*MX[E,N]*MXZ*.sac")))
+            fls_to_remove.extend(glob(os.path.join(it_dir, "corr", "*MXZ*MX[E,N]*.sac")))
+            for f in fls_to_remove:
+                os.system("rm " + f)
+
 
     return()

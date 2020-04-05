@@ -226,13 +226,13 @@ precompute_wavefield first.')
             if verbose:
                 print('Adding homogeneous distribution')
             distribution = np.ones(grd.shape[-1])
-            return(parameters['weight'] * distribution)
+            return(float(parameters['weight']) * distribution)
 
         elif parameters['distribution'] == 'ocean':
             if verbose:
                 print('Adding ocean-only distribution')
             is_ocean = np.abs(is_land(grd[0], grd[1]) - 1.)
-            return(parameters['weight'] * is_ocean)
+            return(float(parameters['weight']) * is_ocean)
 
         elif parameters['distribution'] == 'gaussian_blob':
             if verbose:
@@ -252,7 +252,7 @@ precompute_wavefield first.')
                 is_ocean = np.abs(is_land(grd[0], grd[1]) - 1.)
                 blob *= is_ocean
 
-            return(parameters['weight'] * blob)
+            return(float(parameters['weight']) * blob)
 
     def spectrum_from_parameters(self, freq, parameters):
 
