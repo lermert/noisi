@@ -19,7 +19,7 @@ install:
   - conda info -a
 
   # Replace dep1 dep2 ... with your dependencies
-  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy obspy>=1.0.1 geographiclib mpi4py>=2.0.0 pandas h5py PyYaml pytest proj==4.9 cartopy
+  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy obspy>=1.0.1 geographiclib mpi4py>=2.0.0 pandas h5py PyYaml pytest proj4 cartopy
   - conda activate test-environment
   - python setup.py install
 
