@@ -6,20 +6,18 @@ from glob import glob
 from math import ceil
 from obspy import Trace
 from warnings import warn
-from noisi_v1 import NoiseSource, WaveField
+from noisi import NoiseSource, WaveField
 from obspy.signal.invsim import cosine_taper
-from noisi_v1.util.windows import my_centered
-from noisi_v1.util.geo import geograph_to_geocent
-from noisi_v1.util.corr_pairs import define_correlationpairs
-from noisi_v1.util.corr_pairs import rem_fin_prs, rem_no_obs
+from noisi.util.windows import my_centered
+from noisi.util.geo import geograph_to_geocent
+from noisi.util.corr_pairs import define_correlationpairs
+from noisi.util.corr_pairs import rem_fin_prs, rem_no_obs
+from noisi.util.rotate_horizontal_components import apply_rotation
 try:
     import instaseis
 except ImportError:
     pass
-# prepare embarrassingly parallel run:
-# comm = MPI.COMM_WORLD
-# size = comm.Get_size()
-# rank = comm.Get_rank()
+import re
 
 
 class config_params(object):
@@ -39,11 +37,37 @@ class config_params(object):
                                                        ['project_path'],
                                                        'config.yml')))
         self.obs_only = self.source_config['model_observed_only']
-        self.channel = 'MX' + self.config['wavefield_channel']
         self.auto_corr = self.source_config['get_auto_corr']
         with open(os.path.join(self.args.source_model,
                   'measr_config.yml')) as mconf:
             self.measr_config = yaml.safe_load(mconf)
+
+        # if self.config['wavefield_channel'] == "all" and not\
+        #  self.source_config["rotate_horizontal_components"] and not\
+        #  self.source_config["diagonals"]:
+        #     self.output_channels = ["ZZ", "EE", "NN", "ZE", "EZ", "ZN",
+        #                             "NZ", "NE", "EN"]
+        # elif self.config['wavefield_channel'] == "all" and not\
+        #  self.source_config["rotate_horizontal_components"] and\
+        #  self.source_config["diagonals"]:
+        #     self.output_channels = ["ZZ", "EE", "NN"]
+        # elif self.config['wavefield_channel'] == "all" and\
+        #  self.source_config["rotate_horizontal_components"] and not\
+        #  self.source_config["diagonals"]:
+        #     self.output_channels = ["ZZ", "TT", "RR", "ZT", "TZ", "ZR",
+        #                             "RZ", "RT", "TR"]
+        # elif self.config['wavefield_channel'] == "all" and\
+        #  self.source_config["rotate_horizontal_components"] and\
+        #  self.source_config["diagonals"]:
+        #     self.output_channels = ["ZZ", "TT", "RR"]
+        # else:
+        #     self.output_channels = [2 * self.config["wavefield_channel"]]
+        if self.config['wavefield_channel'] == "all":
+            self.output_channels = ["ZZ", "ZN", "ZE", "NZ", "NN", "NE",
+                                    "EZ", "EN", "EE"]
+        else:
+            self.output_channels = [2 * self.config["wavefield_channel"]]
+
         # Figure out how many frequency bands are measured
         bandpass = self.measr_config['bandpass']
         if bandpass is None:
@@ -60,31 +84,69 @@ def add_input_files(cp, all_conf, insta=False):
     inf1 = cp[0].split()
     inf2 = cp[1].split()
 
-    channel = all_conf.config['wavefield_channel']
+    input_file_list = []
 
     # station names
-    if all_conf.ignore_network:
-        sta1 = "*.{}..??{}".format(*(inf1[1:2] + [channel]))
-        sta2 = "*.{}..??{}".format(*(inf2[1:2] + [channel]))
+    for chas in all_conf.output_channels:
+        if all_conf.ignore_network:
+            sta1 = "*.{}..MX{}".format(*(inf1[1:2] + [chas[0]]))
+            sta2 = "*.{}..MX{}".format(*(inf2[1:2] + [chas[1]]))
+        else:
+            sta1 = "{}.{}..MX{}".format(*(inf1[0:2] + [chas[0]]))
+            sta2 = "{}.{}..MX{}".format(*(inf2[0:2] + [chas[1]]))
+
+        # basic wave fields are not rotated to Z, R, T
+        # so correct the input file name
+        # if all_conf.source_config["rotate_horizontal_components"]:
+        #     sta1 = re.sub("MXT", "MXE", sta1)
+        #     sta2 = re.sub("MXT", "MXE", sta2)
+        #     sta1 = re.sub("MXR", "MXN", sta1)
+        #     sta2 = re.sub("MXR", "MXN", sta2)
+        # Wavefield files
+        if not insta:
+
+            dir = os.path.join(all_conf.config['project_path'], 'greens')
+            wf1 = glob(os.path.join(dir, sta1 + '.h5'))[0]
+            wf2 = glob(os.path.join(dir, sta2 + '.h5'))[0]
+
+        else:
+            # need to return two receiver coordinate pairs. For buried sensors,
+            # depth could be used but no elevation is possible.
+            # so maybe keep everything at 0 m?
+            # lists of information directly from the stations.txt file.
+            wf1 = inf1
+            wf2 = inf2
+        input_file_list.append([wf1, wf2])
+
+    return(input_file_list)
+
+
+def add_output_files(cp, all_conf):
+
+    corr_traces = []
+
+    id1 = cp[0].split()[0] + cp[0].split()[1]
+    id2 = cp[1].split()[0] + cp[1].split()[1]
+
+    if id1 < id2:
+        inf1 = cp[0].split()
+        inf2 = cp[1].split()
     else:
-        sta1 = "{}.{}..??{}".format(*(inf1[0:2] + [channel]))
-        sta2 = "{}.{}..??{}".format(*(inf2[0:2] + [channel]))
+        inf2 = cp[0].split()
+        inf1 = cp[1].split()
 
-    # Wavefield files
-    if not insta:
+    for chas in all_conf.output_channels:
+        channel1 = "MX" + chas[0]
+        channel2 = "MX" + chas[1]
+        sta1 = "{}.{}..{}".format(*(inf1[0:2] + [channel1]))
+        sta2 = "{}.{}..{}".format(*(inf2[0:2] + [channel2]))
 
-        dir = os.path.join(all_conf.config['project_path'], 'greens')
-        wf1 = glob(os.path.join(dir, sta1 + '.h5'))[0]
-        wf2 = glob(os.path.join(dir, sta2 + '.h5'))[0]
-    else:
-        # need to return two receiver coordinate pairs. For buried sensors,
-        # depth could be used but no elevation is possible.
-        # so maybe keep everything at 0 m?
-        # lists of information directly from the stations.txt file.
-        wf1 = inf1
-        wf2 = inf2
-
-    return(wf1, wf2)
+        corr_trace_name = "{}--{}.sac".format(sta1, sta2)
+        corr_trace_name = os.path.join(all_conf.source_config['source_path'],
+                                       'iteration_' + str(all_conf.step),
+                                       'corr', corr_trace_name)
+        corr_traces.append(corr_trace_name)
+    return corr_traces
 
 
 def define_correlation_tasks(all_conf, comm, size, rank):
@@ -93,7 +155,7 @@ def define_correlation_tasks(all_conf, comm, size, rank):
                                 ['project_path'],
                                 all_conf.auto_corr)
     if rank == 0 and all_conf.config['verbose']:
-        print('Nr all possible correlation pairs %g ' % len(p))
+        print('Nr of station pairs %g ' % len(p))
 
     # Remove pairs for which no observation is available
     obs_only = all_conf.source_config['model_observed_only']
@@ -126,13 +188,13 @@ def define_correlation_tasks(all_conf, comm, size, rank):
         # broadcast p to all ranks
         p = comm.bcast(p, root=0)
         if rank == 0 and all_conf.config['verbose']:
-            print('Nr correlation pairs after checking available observ. %g '
+            print('Nr station pairs after checking available observ. %g '
                   % len(p))
 
     # Remove pairs that have already been calculated
     p = rem_fin_prs(p, all_conf.source_config, all_conf.step)
     if rank == 0 and all_conf.config['verbose']:
-        print('Nr correlation pairs after checking already calculated ones %g'
+        print('Nr station pairs after checking already calculated ones %g'
               % len(p))
         print(16 * '*')
 
@@ -145,28 +207,6 @@ def define_correlation_tasks(all_conf, comm, size, rank):
     p_p = p[rank * num_pairs: rank * num_pairs + num_pairs]
 
     return(p_p, num_pairs, len(p))
-
-
-def add_output_file(cp, all_conf):
-
-    id1 = cp[0].split()[0] + cp[0].split()[1]
-    id2 = cp[1].split()[0] + cp[1].split()[1]
-
-    if id1 < id2:
-        inf1 = cp[0].split()
-        inf2 = cp[1].split()
-    else:
-        inf2 = cp[0].split()
-        inf1 = cp[1].split()
-
-    sta1 = "{}.{}..{}".format(*(inf1[0:2] + [all_conf.channel]))
-    sta2 = "{}.{}..{}".format(*(inf2[0:2] + [all_conf.channel]))
-
-    corr_trace_name = "{}--{}.sac".format(sta1, sta2)
-    corr_trace_name = os.path.join(all_conf.source_config['source_path'],
-                                   'iteration_' + str(all_conf.step), 'corr',
-                                   corr_trace_name)
-    return corr_trace_name
 
 
 def get_ns(all_conf, insta=False):
@@ -353,10 +393,10 @@ def run_corr(args, comm, size, rank):
                                                        n_p_p, n_p))
 
     # Current model for the noise source
-    nsrc = os.path.join(all_conf.source_config['project_path'],
+    it_dir = os.path.join(all_conf.source_config['project_path'],
                         all_conf.source_config['source_name'],
-                        'iteration_' + str(all_conf.step),
-                        'starting_model.h5')
+                        'iteration_' + str(all_conf.step))
+    nsrc = os.path.join(it_dir,'starting_model.h5')
 
     # Smart numbers
     all_ns = get_ns(all_conf)  # ntime, n, n_corr, Fs
@@ -369,19 +409,41 @@ def run_corr(args, comm, size, rank):
     with NoiseSource(nsrc) as nsrc:
         for cp in correlation_tasks:
             try:
-                input_files = add_input_files(cp, all_conf)
+                input_files_list = add_input_files(cp, all_conf)
 
-                output_file = add_output_file(cp, all_conf)
+                output_files = add_output_files(cp, all_conf)
             except (IndexError, FileNotFoundError):
                 if all_conf.config['verbose']:
                     print('Could not determine correlation for: %s\
     \nCheck if wavefield .h5 file is available.' % cp)
                 continue
 
-            correlation, sta1, sta2 = compute_correlation(input_files,
-                                                          all_conf, nsrc,
-                                                          all_ns, taper)
-            add_metadata_and_write(correlation, sta1, sta2,
-                                   output_file, all_ns[3])
+            if type(input_files_list[0]) != list:
+                input_files_list = [input_files_list]
+
+            for i, input_files in enumerate(input_files_list):
+                correlation, sta1, sta2 = compute_correlation(input_files,
+                                                              all_conf, nsrc,
+                                                              all_ns, taper)
+                add_metadata_and_write(correlation, sta1, sta2,
+                                       output_files[i], all_ns[3])
+
+            if all_conf.source_config["rotate_horizontal_components"]:
+                fls = glob(os.path.join(it_dir, "corr", "*{}*{}*.sac".format(cp[0].split()[1],
+                                                                            cp[1].split()[1])))
+                fls.sort()
+                apply_rotation(fls,
+                               stationlistfile=os.path.join(all_conf.source_config['project_path'],
+                               "stationlist.csv"), output_directory=os.path.join(it_dir, "corr"))
+
+    comm.barrier()
+    if rank == 0:
+        if all_conf.source_config["rotate_horizontal_components"]:
+            fls_to_remove = glob(os.path.join(it_dir, "corr", "*MX[E,N]*MX[E,N]*.sac"))
+            fls_to_remove.extend(glob(os.path.join(it_dir, "corr", "*MX[E,N]*MXZ*.sac")))
+            fls_to_remove.extend(glob(os.path.join(it_dir, "corr", "*MXZ*MX[E,N]*.sac")))
+            for f in fls_to_remove:
+                os.system("rm " + f)
+
 
     return()

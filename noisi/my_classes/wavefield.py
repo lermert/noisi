@@ -2,11 +2,11 @@ from __future__ import print_function
 import numpy as np
 import h5py
 try:
-    from noisi_v1.util import plot
+    from noisi.util import plot
 except ImportError:
     print("NO plotting possible (is cartopy installed?)", end='\n')
     pass
-from noisi_v1.util import filter
+from noisi.util import filter
 try:
     from scipy.signal import sosfilt
 except ImportError:
@@ -56,7 +56,7 @@ class WaveField(object):
         if by_index:
             return(self.data[ix, :])
         else:
-            raise NotImplementedError("Not yet implemented.")
+            raise NotImplementedError("Not implemented.")
 
     def copy_setup(self, newfile, nt=None,
                    ntraces=None, w='r+'):
@@ -68,7 +68,6 @@ class WaveField(object):
         if nt is not None:
             shape[1] = nt
         shape = tuple(shape)
-
         # Create new file
         file = h5py.File(newfile, 'w-')
 
@@ -87,7 +86,7 @@ class WaveField(object):
         print('Copied setup of ' + self.file.filename)
         file.close()
 
-        return(WaveField(newfile, w=w, fdomain=self.fdomain))
+        return(WaveField(newfile, w=w))
 
     def truncate(self, newfile, truncate_after_seconds):
 

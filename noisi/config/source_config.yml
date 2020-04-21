@@ -3,6 +3,8 @@
     "source_name": "",
     "source_path": "",
     "date_created": "",
+    "diagonals": false,
+    "rotate_horizontal_components": false,
     "get_auto_corr": true,
     "model_observed_only": false,
     "max_lag": 300,

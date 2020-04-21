@@ -5,10 +5,10 @@ import copy
 import yaml
 from obspy import read, Trace, Stream
 from obspy.geodetics import gps2dist_azimuth
-from noisi_v1.scripts import measurements as rm
-from noisi_v1.scripts import adjnt_functs as am
-from noisi_v1.util.windows import my_centered, snratio
-from noisi_v1.util.corr_pairs import get_synthetics_filename
+from noisi.scripts import measurements as rm
+from noisi.scripts import adjnt_functs as am
+from noisi.util.windows import my_centered, snratio
+from noisi.util.corr_pairs import get_synthetics_filename
 from warnings import warn
 
 

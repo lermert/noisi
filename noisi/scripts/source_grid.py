@@ -2,9 +2,9 @@ import numpy as np
 import yaml
 import os
 import io
-from noisi_v1.util.geo import points_on_ell
+from noisi.util.geo import points_on_ell
 try:
-    from noisi_v1.util.plot import plot_sourcegrid
+    from noisi.util.plot import plot_sourcegrid
 except ImportError:
     pass
 try:

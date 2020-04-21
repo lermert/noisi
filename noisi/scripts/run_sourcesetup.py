@@ -7,11 +7,11 @@ from glob import glob
 import os
 import io
 import errno
-from noisi_v1 import WaveField
-from noisi_v1.util.geo import is_land, geographical_distances
-from noisi_v1.util.geo import get_spherical_surface_elements
+from noisi import WaveField
+from noisi.util.geo import is_land, geographical_distances
+from noisi.util.geo import get_spherical_surface_elements
 try:
-    from noisi_v1.util.plot import plot_grid
+    from noisi.util.plot import plot_grid
     create_plot = True
 except ImportError:
     create_plot = False
@@ -226,13 +226,13 @@ precompute_wavefield first.')
             if verbose:
                 print('Adding homogeneous distribution')
             distribution = np.ones(grd.shape[-1])
-            return(parameters['weight'] * distribution)
+            return(float(parameters['weight']) * distribution)
 
         elif parameters['distribution'] == 'ocean':
             if verbose:
                 print('Adding ocean-only distribution')
             is_ocean = np.abs(is_land(grd[0], grd[1]) - 1.)
-            return(parameters['weight'] * is_ocean)
+            return(float(parameters['weight']) * is_ocean)
 
         elif parameters['distribution'] == 'gaussian_blob':
             if verbose:
@@ -252,7 +252,7 @@ precompute_wavefield first.')
                 is_ocean = np.abs(is_land(grd[0], grd[1]) - 1.)
                 blob *= is_ocean
 
-            return(parameters['weight'] * blob)
+            return(float(parameters['weight']) * blob)
 
     def spectrum_from_parameters(self, freq, parameters):
 

@@ -2,9 +2,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from obspy import Trace, read
 from obspy.signal.invsim import cosine_taper
-from noisi_v1.scripts import measurements as rm
-from noisi_v1 import NoiseSource
-from noisi_v1.scripts.correlation import get_ns, config_params,\
+from noisi.scripts import measurements as rm
+from noisi import NoiseSource
+from noisi.scripts.correlation import get_ns, config_params,\
     compute_correlation
 import os
 import h5py

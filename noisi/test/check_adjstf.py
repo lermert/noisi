@@ -1,8 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from obspy import Trace
-from noisi_v1.scripts import measurements as rm
-from noisi_v1.scripts import adjnt_functs as af
+from noisi.scripts import measurements as rm
+from noisi.scripts import adjnt_functs as af
 
 # more or less replicating Korbi's test with my measurement and adjoint source
 # *********************************************
