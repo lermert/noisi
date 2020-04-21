@@ -1,0 +1,11 @@
+numpy
+scipy
+obspy>=1.0.1
+geographiclib
+mpi4py>=2.0.0
+pandas
+h5py
+PyYaml
+cartopy
+jupyter
+pytest
