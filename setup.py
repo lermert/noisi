@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 
 setup(
-    name = 'noisi_v1',
+    name = 'noisi',
     version = '0.0.0a0',
     description = 'Package to calculate noise correlations from precomputed\
  seismic wavefields',
@@ -20,7 +20,7 @@ setup(
     ],
     keywords = 'Ambient seismic noise',
     packages = find_packages(),
-    package_data={'noisi_v1':['config/config.yml',
+    package_data={'noisi':['config/config.yml',
                   'config/source_config.yml',
                   'config/measr_config.yml',
                   'config/config_comments.txt',
@@ -43,7 +43,7 @@ setup(
         "pytest"],
     entry_points = {
         'console_scripts': [
-            'noisi = noisi_v1.main:run'
+            'noisi = noisi.main:run'
         ]
     },
 )

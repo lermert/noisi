@@ -1,7 +1,7 @@
 import numpy as np
 import h5py
 try:
-    from noisi_v1.util.plot import plot_grid
+    from noisi.util.plot import plot_grid
 except ImportError:
     print('Plotting unavailable, is basemap installed?')
 

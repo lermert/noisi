@@ -1,22 +1,22 @@
-from noisi_v1.scripts.run_wavefieldprep import precomp_wavefield
-from noisi_v1.scripts import adjnt_functs as am
-from noisi_v1.scripts import measurements as rm
-from noisi_v1.util.windows import my_centered, get_window, snratio
-from noisi_v1.util.geo import geographical_distances, is_land,\
+from noisi.scripts.run_wavefieldprep import precomp_wavefield
+from noisi.scripts import adjnt_functs as am
+from noisi.scripts import measurements as rm
+from noisi.util.windows import my_centered, get_window, snratio
+from noisi.util.geo import geographical_distances, is_land,\
     geograph_to_geocent, get_spherical_surface_elements, points_on_ell, wgs84,\
     len_deg_lat, len_deg_lon
 import pytest
 import numpy as np
 from obspy import Trace
 from math import floor
-from noisi_v1.scripts.correlation import config_params, get_ns, \
+from noisi.scripts.correlation import config_params, get_ns, \
     add_input_files, compute_correlation
 import os
-from noisi_v1.util.corr_pairs import define_correlationpairs
-from noisi_v1 import NoiseSource
+from noisi.util.corr_pairs import define_correlationpairs
+from noisi import NoiseSource
 from obspy.signal.invsim import cosine_taper
-from noisi_v1.scripts.kernel import define_kernel_tasks, compute_kernel
-from noisi_v1.scripts.kernel import add_input_files as input_files_kernel
+from noisi.scripts.kernel import define_kernel_tasks, compute_kernel
+from noisi.scripts.kernel import add_input_files as input_files_kernel
 from mpi4py import MPI
 
 comm = MPI.COMM_WORLD

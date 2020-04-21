@@ -7,11 +7,11 @@ from glob import glob
 import os
 import io
 import errno
-from noisi_v1 import WaveField
-from noisi_v1.util.geo import is_land, geographical_distances
-from noisi_v1.util.geo import get_spherical_surface_elements
+from noisi import WaveField
+from noisi.util.geo import is_land, geographical_distances
+from noisi.util.geo import get_spherical_surface_elements
 try:
-    from noisi_v1.util.plot import plot_grid
+    from noisi.util.plot import plot_grid
     create_plot = True
 except ImportError:
     create_plot = False

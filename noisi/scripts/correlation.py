@@ -6,13 +6,13 @@ from glob import glob
 from math import ceil
 from obspy import Trace
 from warnings import warn
-from noisi_v1 import NoiseSource, WaveField
+from noisi import NoiseSource, WaveField
 from obspy.signal.invsim import cosine_taper
-from noisi_v1.util.windows import my_centered
-from noisi_v1.util.geo import geograph_to_geocent
-from noisi_v1.util.corr_pairs import define_correlationpairs
-from noisi_v1.util.corr_pairs import rem_fin_prs, rem_no_obs
-from noisi_v1.util.rotate_horizontal_components import apply_rotation
+from noisi.util.windows import my_centered
+from noisi.util.geo import geograph_to_geocent
+from noisi.util.corr_pairs import define_correlationpairs
+from noisi.util.corr_pairs import rem_fin_prs, rem_no_obs
+from noisi.util.rotate_horizontal_components import apply_rotation
 try:
     import instaseis
 except ImportError:

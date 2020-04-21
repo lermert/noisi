@@ -1,9 +1,9 @@
 import numpy as np
 from scipy.signal import hilbert
-from noisi_v1.util.windows import get_window
+from noisi.util.windows import get_window
 from math import log
 try:
-    from noisi_v1.util.plot import plot_window
+    from noisi.util.plot import plot_window
 except ImportError:
     pass
 

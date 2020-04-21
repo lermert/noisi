@@ -1,13 +1,12 @@
 import argparse
 from mpi4py import MPI
-from noisi_v1.scripts.source_grid import setup_sourcegrid as setup_sgrid
-from noisi_v1.util.setup_new import setup_proj
-# from noisi_v1.scripts.run_correlation import run_corr
-from noisi_v1.scripts.correlation import run_corr
-from noisi_v1.scripts.run_wavefieldprep import precomp_wavefield
-from noisi_v1.scripts.run_sourcesetup import source_setup
-from noisi_v1.scripts.run_measurement import run_measurement
-from noisi_v1.scripts.kernel import run_kern
+from noisi.scripts.source_grid import setup_sourcegrid as setup_sgrid
+from noisi.util.setup_new import setup_proj
+from noisi.scripts.correlation import run_corr
+from noisi.scripts.run_wavefieldprep import precomp_wavefield
+from noisi.scripts.run_sourcesetup import source_setup
+from noisi.scripts.run_measurement import run_measurement
+from noisi.scripts.kernel import run_kern
 
 # simple embarrassingly parallel run:
 comm = MPI.COMM_WORLD

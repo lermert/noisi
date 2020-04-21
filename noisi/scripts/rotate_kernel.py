@@ -1,11 +1,10 @@
 import numpy as np
 import h5py
 from math import radians, cos, sin
-from noisi_v1 import WaveField
+from noisi import WaveField, NoiseSource
 from pandas import read_csv
 from obspy.geodetics import gps2dist_azimuth
 from obspy import read
-from noisi_v1 import NoiseSource
 import os
 
 def rotation_matrix(baz_in_degrees):

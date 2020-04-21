@@ -7,10 +7,10 @@ import numpy as np
 from math import pi
 import h5py
 from obspy.geodetics import gps2dist_azimuth
-from noisi_v1 import WaveField
+from noisi import WaveField
 from scipy.fftpack import next_fast_len
 from scipy.signal import lfilter, butter
-from noisi_v1.util.geo import geograph_to_geocent
+from noisi.util.geo import geograph_to_geocent
 from glob import glob
 try:
     import instaseis

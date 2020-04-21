@@ -8,15 +8,15 @@ import re
 from pandas import read_csv
 
 from obspy import read, Stream
-from noisi_v1 import NoiseSource, WaveField
+from noisi import NoiseSource, WaveField
 from obspy.signal.invsim import cosine_taper
 from obspy.geodetics import gps2dist_azimuth
 from warnings import warn
-from noisi_v1.util.windows import my_centered
-from noisi_v1.util.geo import geograph_to_geocent
-from noisi_v1.scripts.rotate_kernel import assemble_rotated_kernel
-from noisi_v1.util.corr_pairs import define_correlationpairs, rem_no_obs
-from noisi_v1.scripts.correlation import config_params, get_ns
+from noisi.util.windows import my_centered
+from noisi.util.geo import geograph_to_geocent
+from noisi.scripts.rotate_kernel import assemble_rotated_kernel
+from noisi.util.corr_pairs import define_correlationpairs, rem_no_obs
+from noisi.scripts.correlation import config_params, get_ns
 try:
     import instaseis
 except ImportError:

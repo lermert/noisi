@@ -1,5 +1,5 @@
 import numpy as np
-from noisi_v1.util import windows as wn
+from noisi.util import windows as wn
 from scipy.signal import hilbert
 
 
