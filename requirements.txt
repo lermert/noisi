@@ -6,7 +6,4 @@ mpi4py>=2.0.0
 pandas
 h5py
 PyYaml
-proj==4.9
-cartopy
-jupyter
 pytest
