@@ -1,0 +1,21 @@
+project_path: ./test/testdata_v1
+source_name: testsource_v1
+source_path: ./test/testdata_v1/testsource_v1
+date_created: 2019.06.12
+get_auto_corr: true
+rotate_horizontal_components: false
+model_observed_only: false
+max_lag: 100
+source_setup_file: ./test/testdata_v1/testsource_v1/source_setup_parameters.yml
+project_name: ''
+# project_path: added automatically, no need to edit
+# source_name: added automatically, no need to edit
+# source_path: added automatically, no need to edit
+# date_created: added automatically, no need to edit
+# get_auto_corr: compute autocorrelations (true / false)
+# model_observed_only: if true, only station pairs for which observations
+#     are found in the observed_correlations folder will be modelled
+# max_lag: Maximum lag for cross-correlation in seconds
+# source setup file: File containing parameters that describe the 
+#     starting model for the source: Find an example
+#     under examples/source_setup_parameters.yaml

@@ -1,0 +1,16 @@
+# project_path: added automatically, no need to edit
+# source_name: added automatically, no need to edit
+# source_path: added automatically, no need to edit
+# date_created: added automatically, no need to edit
+# get_auto_corr: compute autocorrelations (true / false)
+# rotate_horizontal_components: During modeling, should ENZ
+# be rotated to RTZ with respect to the interstation azimuth (true / false)
+# diagonals: (true / false): If wavefield channel is set to "all" in
+# config.json, this setting will determine if only diagonals or all 
+# components of the cross-correlation tensor are modelled.
+# model_observed_only: if true, only station pairs for which observations
+#     are found in the observed_correlations folder will be modelled
+# max_lag: Maximum lag for cross-correlation in seconds
+# source setup file: File containing parameters that describe the 
+#     starting model for the source: Find an example
+#     under examples/source_setup_parameters.yaml
