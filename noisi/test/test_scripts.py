@@ -1,3 +1,11 @@
+"""
+Tests for noisi
+:copyright:
+    noisi development team
+:license:
+    GNU Lesser General Public License, Version 3 and later
+    (https://www.gnu.org/copyleft/lesser.html)
+"""
 from noisi.scripts.run_wavefieldprep import precomp_wavefield
 from noisi.scripts import adjnt_functs as am
 from noisi.scripts import measurements as rm

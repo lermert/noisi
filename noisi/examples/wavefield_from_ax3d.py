@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+# author / copyright: Original extraction Kuangdai Leng
+# Modified by Laura Ermert
 
 '''
 wavefield for noisi from axisem3d

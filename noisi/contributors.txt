@@ -1,0 +1,6 @@
+Current and past contributors
+
+Laura Ermert laura.ermert@posteo.net
+Jonas Igel jonas.igel@erdw.ethz.ch
+Korbinian Sager korbinian_sager@brown.edu
+Andreas Fichtner andreas.fichtner@erdw.ethz.ch

@@ -1,4 +1,12 @@
-# script to optimize noise source model with scipy optimize
+"""
+Sample script to optimize ambient noise source models using
+scipy.optimize and noisi
+:copyright:
+    noisi development team
+:license:
+    GNU Lesser General Public License, Version 3 and later
+    (https://www.gnu.org/copyleft/lesser.html)
+"""
 from mpi4py import MPI
 from scipy.optimize import minimize, Bounds
 from noisi import NoiseSource
