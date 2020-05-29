@@ -38,8 +38,6 @@ setup(
         "pandas",
         "h5py",
         "PyYaml",
-        "cartopy",
-        "jupyter",
         "pytest"],
     entry_points = {
         'console_scripts': [

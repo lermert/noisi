@@ -10,6 +10,7 @@ except ImportError:
 try:
     import cartopy.crs as ccrs
 except ImportError:
+    print("cartopy is not installed -- can't plot.")
     pass
 import pprint
 

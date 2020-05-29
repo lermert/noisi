@@ -8,7 +8,10 @@ Plotting for noisi
 """
 # plotting on the map
 import matplotlib.pyplot as plt
-import cartopy.crs as ccrs
+try:
+    import cartopy.crs as ccrs
+except ImportError:
+    print("cartopy not found -- is needed for plotting")
 import numpy as np
 
 

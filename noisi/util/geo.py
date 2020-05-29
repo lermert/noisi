@@ -7,6 +7,7 @@ try:
     from shapely.ops import unary_union
     from shapely.prepared import prep
 except ImportError:
+    print("Cartopy not found -- cannot use ocean-only source")
     pass
 from warnings import warn
 
