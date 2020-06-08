@@ -6,6 +6,7 @@ Collection of correlation functions for noisi
     GNU Lesser General Public License, Version 3 and later
     (https://www.gnu.org/copyleft/lesser.html)
 """
+
 import numpy as np
 import os
 import yaml
@@ -49,31 +50,14 @@ class config_params(object):
                   'measr_config.yml')) as mconf:
             self.measr_config = yaml.safe_load(mconf)
 
-        # if self.config['wavefield_channel'] == "all" and not\
-        #  self.source_config["rotate_horizontal_components"] and not\
-        #  self.source_config["diagonals"]:
-        #     self.output_channels = ["ZZ", "EE", "NN", "ZE", "EZ", "ZN",
-        #                             "NZ", "NE", "EN"]
-        # elif self.config['wavefield_channel'] == "all" and not\
-        #  self.source_config["rotate_horizontal_components"] and\
-        #  self.source_config["diagonals"]:
-        #     self.output_channels = ["ZZ", "EE", "NN"]
-        # elif self.config['wavefield_channel'] == "all" and\
-        #  self.source_config["rotate_horizontal_components"] and not\
-        #  self.source_config["diagonals"]:
-        #     self.output_channels = ["ZZ", "TT", "RR", "ZT", "TZ", "ZR",
-        #                             "RZ", "RT", "TR"]
-        # elif self.config['wavefield_channel'] == "all" and\
-        #  self.source_config["rotate_horizontal_components"] and\
-        #  self.source_config["diagonals"]:
-        #     self.output_channels = ["ZZ", "TT", "RR"]
-        # else:
-        #     self.output_channels = [2 * self.config["wavefield_channel"]]
         if self.config['wavefield_channel'] == "all":
             self.output_channels = ["ZZ", "ZN", "ZE", "NZ", "NN", "NE",
                                     "EZ", "EN", "EE"]
         else:
             self.output_channels = [2 * self.config["wavefield_channel"]]
+
+        for channel in self.output_channels:
+            assert len(channel) == 2, "Specify channel name as \"E\", \"N\", \"Z\" or \"all\"." 
 
         # Figure out how many frequency bands are measured
         bandpass = self.measr_config['bandpass']
@@ -90,10 +74,8 @@ def add_input_files(cp, all_conf, insta=False):
 
     inf1 = cp[0].split()
     inf2 = cp[1].split()
-
     input_file_list = []
 
-    # station names
     for chas in all_conf.output_channels:
         if all_conf.ignore_network:
             sta1 = "*.{}..MX{}".format(*(inf1[1:2] + [chas[0]]))
@@ -110,50 +92,17 @@ def add_input_files(cp, all_conf, insta=False):
         #     sta1 = re.sub("MXR", "MXN", sta1)
         #     sta2 = re.sub("MXR", "MXN", sta2)
         # Wavefield files
-        if not insta:
+        # need to return two receiver coordinate pairs. For buried sensors,
+        # depth could be used but no elevation is possible.
+        # so maybe keep everything at 0 m?
+        # lists of information directly from the stations.txt file.
+        direc = os.path.join(all_conf.config['project_path'], 'greens')
+        wf1 = glob(os.path.join(direc, sta1 + '.h5'))[0]
+        wf2 = glob(os.path.join(direc, sta2 + '.h5'))[0]
 
-            dir = os.path.join(all_conf.config['project_path'], 'greens')
-            wf1 = glob(os.path.join(dir, sta1 + '.h5'))[0]
-            wf2 = glob(os.path.join(dir, sta2 + '.h5'))[0]
-
-        else:
-            # need to return two receiver coordinate pairs. For buried sensors,
-            # depth could be used but no elevation is possible.
-            # so maybe keep everything at 0 m?
-            # lists of information directly from the stations.txt file.
-            wf1 = inf1
-            wf2 = inf2
         input_file_list.append([wf1, wf2])
 
     return(input_file_list)
-
-
-def add_output_files(cp, all_conf):
-
-    corr_traces = []
-
-    id1 = cp[0].split()[0] + cp[0].split()[1]
-    id2 = cp[1].split()[0] + cp[1].split()[1]
-
-    if id1 < id2:
-        inf1 = cp[0].split()
-        inf2 = cp[1].split()
-    else:
-        inf2 = cp[0].split()
-        inf1 = cp[1].split()
-
-    for chas in all_conf.output_channels:
-        channel1 = "MX" + chas[0]
-        channel2 = "MX" + chas[1]
-        sta1 = "{}.{}..{}".format(*(inf1[0:2] + [channel1]))
-        sta2 = "{}.{}..{}".format(*(inf2[0:2] + [channel2]))
-
-        corr_trace_name = "{}--{}.sac".format(sta1, sta2)
-        corr_trace_name = os.path.join(all_conf.source_config['source_path'],
-                                       'iteration_' + str(all_conf.step),
-                                       'corr', corr_trace_name)
-        corr_traces.append(corr_trace_name)
-    return corr_traces
 
 
 def define_correlation_tasks(all_conf, comm, size, rank):
@@ -162,7 +111,7 @@ def define_correlation_tasks(all_conf, comm, size, rank):
                                 ['project_path'],
                                 all_conf.auto_corr)
     if rank == 0 and all_conf.config['verbose']:
-        print('Nr of station pairs %g ' % len(p))
+        print('Nr all possible correlation pairs %g ' % len(p))
 
     # Remove pairs for which no observation is available
     obs_only = all_conf.source_config['model_observed_only']
@@ -195,13 +144,13 @@ def define_correlation_tasks(all_conf, comm, size, rank):
         # broadcast p to all ranks
         p = comm.bcast(p, root=0)
         if rank == 0 and all_conf.config['verbose']:
-            print('Nr station pairs after checking available observ. %g '
+            print('Nr correlation pairs after checking available observ. %g '
                   % len(p))
 
     # Remove pairs that have already been calculated
     p = rem_fin_prs(p, all_conf.source_config, all_conf.step)
     if rank == 0 and all_conf.config['verbose']:
-        print('Nr station pairs after checking already calculated ones %g'
+        print('Nr correlation pairs after checking already calculated ones %g'
               % len(p))
         print(16 * '*')
 
@@ -216,30 +165,41 @@ def define_correlation_tasks(all_conf, comm, size, rank):
     return(p_p, num_pairs, len(p))
 
 
+def add_output_files(cp, all_conf):
+
+    corr_traces = []
+    
+    id1 = cp[0].split()[0] + cp[0].split()[1]
+    id2 = cp[1].split()[0] + cp[1].split()[1]
+
+    if id1 < id2:
+        inf1 = cp[0].split()
+        inf2 = cp[1].split()
+    else:
+        inf2 = cp[0].split()
+        inf1 = cp[1].split()
+
+    for chas in all_conf.output_channels:
+        channel1 = "MX" + chas[0]
+        channel2 = "MX" + chas[1]
+        sta1 = "{}.{}..{}".format(*(inf1[0:2] + [channel1]))
+        sta2 = "{}.{}..{}".format(*(inf2[0:2] + [channel2]))
+
+        corr_trace_name = "{}--{}.sac".format(sta1, sta2)
+        corr_trace_name = os.path.join(all_conf.source_config['source_path'],
+                                       'iteration_' + str(all_conf.step),
+                                       'corr', corr_trace_name)
+        corr_traces.append(corr_trace_name)
+    return corr_traces
+
 def get_ns(all_conf, insta=False):
     # Nr of time steps in traces
-    if insta:
-        # get path to instaseis db
-        dbpath = all_conf.config['wavefield_path']
-
-        # open
-        db = instaseis.open_db(dbpath)
-        # get a test seismogram to determine...
-        stest = db.get_seismograms(source=instaseis.ForceSource(latitude=0.0,
-                                                                longitude=0.),
-                                   receiver=instaseis.Receiver(latitude=10.,
-                                                               longitude=0.),
-                                   dt=1. / all_conf.config
-                                   ['wavefield_sampling_rate'])[0]
-        nt = stest.stats.npts
-        Fs = stest.stats.sampling_rate
-    else:
-        any_wavefield = glob(os.path.join(all_conf.config['project_path'],
-                                          'greens', '*.h5'))[-1]
-        with WaveField(any_wavefield) as wf1:
-            nt = int(wf1.stats['nt'])
-            Fs = round(wf1.stats['Fs'], 8)
-            n = wf1.stats['npad']
+    any_wavefield = glob(os.path.join(all_conf.config['project_path'],
+                                      'greens', '*.h5'))[-1]
+    with WaveField(any_wavefield) as wf1:
+        nt = int(wf1.stats['nt'])
+        Fs = round(wf1.stats['Fs'], 8)
+        n = wf1.stats['npad']
     # # Necessary length of zero padding
     # # for carrying out frequency domain correlations/convolutions
     # n = next_fast_len(2 * nt - 1)
@@ -271,40 +231,26 @@ def compute_correlation(input_files, all_conf, nsrc, all_ns, taper,
     """
 
     wf1, wf2 = input_files
+    print(wf1)
     ntime, n, n_corr, Fs = all_ns
     ntraces = nsrc.src_loc[0].shape[0]
     correlation = np.zeros(n_corr)
 
-    if insta:
-        # open database
-        dbpath = all_conf.config['wavefield_path']
 
-        # open
-        db = instaseis.open_db(dbpath)
-        # get receiver locations
-        station1 = wf1[0]
-        station2 = wf2[0]
-        lat1 = geograph_to_geocent(float(wf1[2]))
-        lon1 = float(wf1[3])
-        rec1 = instaseis.Receiver(latitude=lat1, longitude=lon1)
-        lat2 = geograph_to_geocent(float(wf2[2]))
-        lon2 = float(wf2[3])
-        rec2 = instaseis.Receiver(latitude=lat2, longitude=lon2)
-    else:
-        wf1 = WaveField(wf1)
-        wf2 = WaveField(wf2)
-        station1 = wf1.stats['reference_station']
-        station2 = wf2.stats['reference_station']
+    wf1 = WaveField(wf1)
+    wf2 = WaveField(wf2)
+    station1 = wf1.stats['reference_station']
+    station2 = wf2.stats['reference_station']
 
-        # Make sure all is consistent
-        if False in (wf1.sourcegrid[1, 0:10] == wf2.sourcegrid[1, 0:10]):
-            raise ValueError("Wave fields not consistent.")
+    # Make sure all is consistent
+    if False in (wf1.sourcegrid[1, 0:10] == wf2.sourcegrid[1, 0:10]):
+        raise ValueError("Wave fields not consistent.")
 
-        if False in (wf1.sourcegrid[1, -10:] == wf2.sourcegrid[1, -10:]):
-            raise ValueError("Wave fields not consistent.")
+    if False in (wf1.sourcegrid[1, -10:] == wf2.sourcegrid[1, -10:]):
+        raise ValueError("Wave fields not consistent.")
 
-        if False in (wf1.sourcegrid[0, -10:] == nsrc.src_loc[0, -10:]):
-            raise ValueError("Wave field and source not consistent.")
+    if False in (wf1.sourcegrid[0, -10:] == nsrc.src_loc[0, -10:]):
+        raise ValueError("Wave field and source not consistent.")
 
     # Loop over source locations
     print_each_n = max(5, round(max(ntraces // 5, 1), -1))
@@ -317,41 +263,43 @@ def compute_correlation(input_files, all_conf, nsrc, all_ns, taper,
             # If amplitude is 0, continue. (Spectrum has 0 phase anyway.)
             continue
 
-        if insta:
-            # get source locations
-            lat_src = geograph_to_geocent(nsrc.src_loc[1, i])
-            lon_src = nsrc.src_loc[0, i]
-            fsrc = instaseis.ForceSource(latitude=lat_src,
-                                         longitude=lon_src,
-                                         f_r=1.e12)
-            Fs = all_conf.config['wavefield_sampling_rate']
-            s1 = db.get_seismograms(source=fsrc, receiver=rec1,
-                                    dt=1. / Fs)[0].data * taper
-            s2 = db.get_seismograms(source=fsrc, receiver=rec2,
-                                    dt=1. / Fs)[0].data * taper
-            s1 = np.ascontiguousarray(s1)
-            s2 = np.ascontiguousarray(s2)
+        if not wf1.fdomain:
+            s1 = np.ascontiguousarray(wf1.get_green(i))
+            s2 = np.ascontiguousarray(wf2.get_green(i))
+            assert s1.shape == s2.shape, "Wave fields 1, 2 cannot have\
+different number of source components."
+            for ix_gf in range(s1.shape[0]):
+                s1[ix_gf, :] *= taper
+                s2[ix_gf, :] *= taper
+
             spec1 = np.fft.rfft(s1, n)
             spec2 = np.fft.rfft(s2, n)
-
         else:
-            if not wf1.fdomain:
-                # read Green's functions
-                s1 = np.ascontiguousarray(wf1.data[i, :] * taper)
-                s2 = np.ascontiguousarray(wf2.data[i, :] * taper)
-                # Fourier transform for greater ease of convolution
-                spec1 = np.fft.rfft(s1, n)
-                spec2 = np.fft.rfft(s2, n)
-            else:
-                spec1 = np.ascontiguousarray(wf1.data[i, :])
-                spec2 = np.ascontiguousarray(wf2.data[i, :])
+            spec1 = np.zeros((3, ntime))
+            spec2 = np.zeros((3, ntime))
+            try:
+                spec1[0, :] = wf1.data['data_fz'][i, :] * taper
+                spec2[0, :] = wf2.data['data_fz'][i, :] * taper
+            except KeyError:
+                pass
+            try:
+                spec1[1, :] = wf1.data['data_fn'][i, :] * taper
+                spec2[1, :] = wf2.data['data_fn'][i, :] * taper
+            except KeyError:
+                pass
+            try:
+                spec1[2, :] = wf1.data['data_fe'][i, :] * taper
+                spec2[2, :] = wf2.data['data_fe'][i, :] * taper
+            except KeyError:
+                pass
 
         # convolve G1G2
         g1g2_tr = np.multiply(np.conjugate(spec1), spec2)
 
         # convolve noise source
         c = np.multiply(g1g2_tr, S)
-
+        # sum up contribution of sources components (z, n, e) to this component
+        c = np.sum(c, axis=0)
         # transform back
         correlation += my_centered(np.fft.fftshift(np.fft.irfft(c, n)),
                                    n_corr) * nsrc.surf_area[i]
@@ -400,17 +348,17 @@ def run_corr(args, comm, size, rank):
                                                        n_p_p, n_p))
 
     # Current model for the noise source
-    it_dir = os.path.join(all_conf.source_config['project_path'],
+    nsrc = os.path.join(all_conf.source_config['project_path'],
                         all_conf.source_config['source_name'],
-                        'iteration_' + str(all_conf.step))
-    nsrc = os.path.join(it_dir,'starting_model.h5')
+                        'iteration_' + str(all_conf.step),
+                        'starting_model.h5')
 
     # Smart numbers
     all_ns = get_ns(all_conf)  # ntime, n, n_corr, Fs
 
     # use a one-sided taper: The seismogram probably has a non-zero end,
     # being cut off wherever the solver stopped running.
-    taper = cosine_taper(all_ns[0], p=0.01)
+    taper = cosine_taper(all_ns[0], p=0.05)
     taper[0: all_ns[0] // 2] = 1.0
 
     with NoiseSource(nsrc) as nsrc:
@@ -452,5 +400,5 @@ def run_corr(args, comm, size, rank):
             for f in fls_to_remove:
                 os.system("rm " + f)
 
-
     return()
+

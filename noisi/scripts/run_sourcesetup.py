@@ -1,3 +1,4 @@
+
 import numpy as np
 from obspy.signal.invsim import cosine_taper
 import h5py
@@ -20,6 +21,9 @@ import matplotlib.pyplot as plt
 from math import pi, sqrt
 from warnings import warn
 import pprint
+
+compstr = {0: 'z', 1: 'n', 2: 'e'}
+comp_map = {'z': 0, 'n': 1, 'e': 2}
 
 
 class source_setup(object):
@@ -135,7 +139,7 @@ and measr_config.yml to source model directory, please edit and rerun.")
                                    'sourcegrid.npy'))
 
         # add the approximate spherical surface elements
-        if grd.shape[-1] < 50000:
+        if grd.shape[-1] < 30000:
             surf_el = get_spherical_surface_elements(grd[0], grd[1])
         else:
             warn('Large grid; surface element computation slow. Using \
@@ -157,24 +161,30 @@ precompute_wavefield first.')
             n = wf.stats['npad']
         freq = np.fft.rfftfreq(n, d=1. / df)
         n_distr = len(parameter_sets)
-        coeffs = np.zeros((grd.shape[-1], n_distr))
+        coeffs = np.zeros((3, grd.shape[-1], n_distr))
         spectra = np.zeros((n_distr, len(freq)))
 
         # fill in the distributions and the spectra
         for i in range(n_distr):
-            coeffs[:, i] = self.distribution_from_parameters(grd,
-                                                             parameter_sets[i],
-                                                             conf['verbose'])
+            component, new_coeffs =\
+                self.distribution_from_parameters(grd,
+                                                  parameter_sets[i],
+                                                  conf['verbose'])
+            coeffs[component, :, i] = new_coeffs
 
             # plot
             outfile = os.path.join(args.source_model,
-                                   'source_starting_model_distr%g.png' % i)
+                                   'source_startmodel_comp_%s_distr%g.png' %
+                                   (compstr[component], i))
             if create_plot:
-                plot_grid(grd[0], grd[1], coeffs[:, i],
-                          outfile=outfile, cmap=colors_cmaps[i%len(colors_cmaps)],
+                plot_grid(grd[0], grd[1], coeffs[component, :, i],
+                          outfile=outfile, cmap=colors_cmaps[i %
+                          len(colors_cmaps)],
                           sequential=True, normalize=False,
-                          quant_unit='Spatial weight (-)',
-                          axislabelpad=-0.1,
+                          quant_unit='Source strength (Pa\u00B2s)',
+                          axislabelpad=-0.16,
+                          cbaror='horizontal',
+                          cbarshrink=0.6,
                           size=10)
 
             spectra[i, :] = self.spectrum_from_parameters(freq,
@@ -186,14 +196,14 @@ precompute_wavefield first.')
             fig1 = plt.figure()
             ax = fig1.add_subplot('111')
             for i in range(n_distr):
-                ax.plot(freq, spectra[i, :] / spectra.max(),
-                        color=colors[i%len(colors_cmaps)])
+                ax.plot(freq,
+                        spectra[i, :], color=colors[i % len(colors)])
 
             ax.set_xlabel('Frequency / Nyquist Frequency')
             plt.xticks([0, freq.max() * 0.25, freq.max() * 0.5,
                        freq.max() * 0.75, freq.max()],
                        ['0', '0.25', '0.5', '0.75', '1'])
-            ax.set_ylabel('Rel. PSD norm. to strongest spectrum (-)')
+            ax.set_ylabel('Rel. PSD (-)')
             fig1.savefig(os.path.join(args.source_model,
                                       'source_starting_model_spectra.png'))
 
@@ -222,17 +232,18 @@ precompute_wavefield first.')
 
     def distribution_from_parameters(self, grd, parameters, verbose=False):
 
+        comp = comp_map[parameters['source_component']]
         if parameters['distribution'] == 'homogeneous':
             if verbose:
                 print('Adding homogeneous distribution')
             distribution = np.ones(grd.shape[-1])
-            return(float(parameters['weight']) * distribution)
+            return(comp, parameters['weight'] * distribution)
 
         elif parameters['distribution'] == 'ocean':
             if verbose:
                 print('Adding ocean-only distribution')
             is_ocean = np.abs(is_land(grd[0], grd[1]) - 1.)
-            return(float(parameters['weight']) * is_ocean)
+            return(comp, parameters['weight'] * is_ocean)
 
         elif parameters['distribution'] == 'gaussian_blob':
             if verbose:
@@ -252,7 +263,7 @@ precompute_wavefield first.')
                 is_ocean = np.abs(is_land(grd[0], grd[1]) - 1.)
                 blob *= is_ocean
 
-            return(float(parameters['weight']) * blob)
+            return(comp, parameters['weight'] * blob)
 
     def spectrum_from_parameters(self, freq, parameters):
 

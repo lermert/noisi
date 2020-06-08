@@ -47,6 +47,7 @@ class WaveField(object):
             self.data['data'] = self.file['data']
         except KeyError:
             pass
+
         # traction source Green's functions
         try:
             self.data['data_fz'] = self.file['data_fz']
@@ -60,6 +61,9 @@ class WaveField(object):
             self.data['data_fe'] = self.file['data_fe']
         except KeyError:
             pass
+
+        if len(self.data) == 0:
+            raise ValueError("No usable data in file.")
 
         if self.fdomain:
             self.freq = np.fft.rfftfreq(self.stats['npad'],

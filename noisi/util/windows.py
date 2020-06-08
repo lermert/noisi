@@ -13,7 +13,6 @@ def my_centered(arr, newsize):
     # get the center portion of a 1-dimensional array correctly
     n = len(arr)
     i0 = (n - newsize) // 2
-    print(i0)
     if i0 < 0:
         i0 = (newsize - n) // 2
         newarr[i0: i0 + n] += arr
