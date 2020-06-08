@@ -1,29 +1,21 @@
-"""
-Class for handling Green's function library in noisi
-:copyright:
-    noisi development team
-:license:
-    GNU Lesser General Public License, Version 3 and later
-    (https://www.gnu.org/copyleft/lesser.html)
-"""
 from __future__ import print_function
 import numpy as np
 import h5py
 try:
     from noisi.util import plot
 except ImportError:
-    print("NO plotting possible (is cartopy installed?)", end='\n')
+    print("No plotting possible (is cartopy installed?)", end='\n')
     pass
 from noisi.util import filter
 try:
     from scipy.signal import sosfilt
 except ImportError:
     from obspy.signal._sosfilt import _sosfilt as sosfilt
-
+from scipy.fftpack import next_fast_len
 from obspy.signal.invsim import cosine_taper
 from obspy.signal.filter import integer_decimation
-from scipy.fftpack import next_fast_len
 from warnings import warn
+from os.path import splitext
 
 
 class WaveField(object):
@@ -33,8 +25,8 @@ class WaveField(object):
     """
 
     def __init__(self, file, sourcegrid=None, w='r'):
-
         self.w = w
+        self.data = {}
 
         try:
             self.file = h5py.File(file, self.w)
@@ -45,37 +37,46 @@ class WaveField(object):
         self.stats = dict(self.file['stats'].attrs)
         self.fdomain = self.stats['fdomain']
         self.sourcegrid = self.file['sourcegrid']
-        
-        try:
-            self.data = self.file['data']
-        except KeyError:
-            self.data = self.file['data_z']
-        if self.fdomain:
-            self.freq = np.fft.rfftfreq(self.stats['npad'],
-                                        d=1. / self.stats['Fs'])
         if 'npad' not in self.stats:
             if self.fdomain:
                 self.stats['npad'] = 2 * self.stats['nt'] - 2
             else:
                 self.stats['npad'] = next_fast_len(2 * self.stats['nt'] - 1)
 
+        try:
+            self.data['data'] = self.file['data']
+        except KeyError:
+            pass
+        # traction source Green's functions
+        try:
+            self.data['data_fz'] = self.file['data_fz']
+        except KeyError:
+            pass
+        try:
+            self.data['data_fn'] = self.file['data_fn']
+        except KeyError:
+            pass
+        try:
+            self.data['data_fe'] = self.file['data_fe']
+        except KeyError:
+            pass
+
+        if self.fdomain:
+            self.freq = np.fft.rfftfreq(self.stats['npad'],
+                                        d=1. / self.stats['Fs'])
+
     def get_green(self, ix=None, by_index=True):
 
         if by_index:
-            return(self.data[ix, :])
+            data_out = np.empty((len(self.data), self.stats['nt']))
+            for ix_data, key in enumerate(self.data.keys()):
+                data_out[ix_data, :] = self.data[key][ix, :]
+            return(data_out)
         else:
-            raise NotImplementedError("Not implemented.")
+            raise NotImplementedError("Not yet implemented.")
 
-    def copy_setup(self, newfile, nt=None,
-                   ntraces=None, w='r+'):
+    def copy_setup(self, newfile, nt=None):
 
-        # Shape of the new array:
-        shape = list(np.shape(self.data))
-        if ntraces is not None:
-            shape[0] = ntraces
-        if nt is not None:
-            shape[1] = nt
-        shape = tuple(shape)
         # Create new file
         file = h5py.File(newfile, 'w-')
 
@@ -89,12 +90,14 @@ class WaveField(object):
             file['stats'].attrs['nt'] = nt
 
         file.create_dataset('sourcegrid', data=self.sourcegrid[:].copy())
-        file.create_dataset('data', shape, dtype=np.float32)
+
+        for key, values in self.data.items():
+            file.create_dataset(key, values.shape, dtype=np.float32)
 
         print('Copied setup of ' + self.file.filename)
         file.close()
 
-        return(WaveField(newfile, w=w))
+        return(WaveField(newfile, w=self.w, fdomain=self.fdomain))
 
     def truncate(self, newfile, truncate_after_seconds):
 
@@ -103,12 +106,9 @@ class WaveField(object):
 
         nt_new = int(round(truncate_after_seconds * self.stats['Fs']))
         with self.copy_setup(newfile, nt=nt_new) as wf:
-            for i in range(self.stats['ntraces']):
-                if self.complex:
-                    wf.data_i[i, :] = self.data_i[i, 0:nt_new].copy()
-                    wf.data_r[i, :] = self.data_r[i, 0:nt_new].copy()
-                else:
-                    wf.data[i, :] = self.data[i, 0:nt_new].copy()
+            for key, values in self.data.items():
+                for i in range(self.stats['ntraces']):
+                    wf.data[key][i, :] = values[i, 0:nt_new].copy()
 
         return()
 
@@ -136,18 +136,20 @@ bandpass, highpass,lowpass' % type
             # Call self.file newfile
             newfile = self
 
-        for i in range(self.stats['ntraces']):
-            # Filter each trace
-            if zerophase:
-                firstpass = sosfilt(sos, self.data[i, :])
-                # Read in any case from self.data
-                newfile.data[i, :] = sosfilt(sos, firstpass[::-1])[::-1]
-                # then assign to newfile, which might be self.file
-            else:
-                newfile.data[i, :] = sosfilt(sos, self.data[i, :])
-        if not overwrite:
-            print('Processed traces written to file %s, file closed, \
-reopen to read / modify.' % newfile.file.filename)
+        for key, values in self.data.items():
+            for i in range(self.stats['ntraces']):
+                # Filter each trace
+                if zerophase:
+                    firstpass = sosfilt(sos, values[i, :])
+                    # Read in any case from self.data
+                    newfile.data[key][i, :] =\
+                        sosfilt(sos, firstpass[::-1])[::-1]
+                    # then assign to newfile, which might be self.file
+                else:
+                    newfile.data[i, :] = sosfilt(sos, values[i, :])
+            if not overwrite:
+                print('Processed traces written to file %s, file closed. \
+Reopen the file to read / modify.' % newfile.file.filename)
 
             newfile.file.close()
 
@@ -165,7 +167,8 @@ reopen to read / modify.' % newfile.file.filename)
         sos = filter.cheby2_lowpass(fs_old, freq)
 
         # figure out new length
-        temp_trace = integer_decimation(self.data[0, :], decimation_factor)
+        temp_trace = integer_decimation(self[self.data.keys()[0]].data[0, :],
+                                        decimation_factor)
         n = len(temp_trace)
 
         # Get taper
@@ -176,42 +179,46 @@ reopen to read / modify.' % newfile.file.filename)
         # Need a new file, because the length changes.
         with self.copy_setup(newfile=outfile, nt=n) as newfile:
 
-            for i in range(self.stats['ntraces']):
-                temp_trace = sosfilt(sos, taper * self.data[i, :])
-                newfile.data[i, :] = integer_decimation(temp_trace,
-                                                        decimation_factor)
+            for key, values in self.data.items():
+                for i in range(self.stats['ntraces']):
+                    temp_trace = sosfilt(sos, taper * values[i, :])
+                    newfile.data[key][i, :] =\
+                        integer_decimation(temp_trace, decimation_factor)
 
             newfile.stats['Fs'] = fs_old / float(decimation_factor)
 
     def get_snapshot(self, t, resolution=1):
 
         t_sample = int(round(self.stats['Fs'] * t))
-        if t_sample >= np.shape(self.data)[1]:
+        if t_sample >= self.stats['nt']:
             warn('Requested sample is out of bounds,\
 resetting to last sample.')
-            t_sample = np.shape(self.data)[1] - 1
+            t_sample = self.stats['nt'] - 1
 
-        if resolution == 1:
-            if self.fdomain:
-                snapshot = np.zeros(self.stats['ntraces'])
-                for i in range(self.stats['ntraces']):
-                    snapshot[i] = np.trapz(self.data[i, :] *
-                                           np.exp(self.freq *
-                                           np.pi * 2. * 1.j * t_sample),
-                                           dx=self.stats['Fs']).real
+        snapshots = {}
+
+        for key, values in self.data.items():
+            if resolution == 1:
+                if self.fdomain:
+                    snapshots[key] = np.zeros(self.stats['ntraces'])
+                    for i in range(self.stats['ntraces']):
+                        snapshots[key][i] =\
+                            np.trapz(values[i, :] * np.exp(self.freq *
+                                     np.pi * 2. * 1.j * t_sample),
+                                     dx=self.stats['Fs']).real
+                else:
+                    snapshots[key] = values[:, t_sample]
             else:
-                snapshot = self.data[:, t_sample]
-        else:
-            if self.fdomain:
-                snapshot = np.zeros(self.data[0::resolution, 0].shape)
-                for i in range(len(snapshot)):
-                    snapshot[i] = np.trapz(self.data[i, :] *
-                                           np.exp(self.freq *
-                                           np.pi * 2. * 1.j * t_sample),
-                                           dx=1. / self.stats['Fs']).real
-            else:
-                snapshot = self.data[0::resolution, t_sample]
-        return snapshot
+                if self.fdomain:
+                    snapshots[key] = np.zeros(values[0::resolution, 0].shape)
+                    for i in range(len(snapshots[key])):
+                        snapshots[key][i] =\
+                            np.trapz(values[i, :] * np.exp(self.freq *
+                                     np.pi * 2. * 1.j * t_sample),
+                                     dx=1. / self.stats['Fs']).real
+                else:
+                    snapshots[key] = values[0::resolution, t_sample]
+        return snapshots
 
     def plot_snapshot(self, t, resolution=1, **kwargs):
 
@@ -226,30 +233,33 @@ resetting to last sample.')
         map_x = self.sourcegrid[0][0::resolution]
         map_y = self.sourcegrid[1][0::resolution]
 
-        if type(self.stats['data_quantity']) != str:
-            data_quantity = self.stats['data_quantity'].decode()
-        else:
-            data_quantity = self.stats['data_quantity']
-        if  data_quantity == 'DIS':
+        if self.stats['data_quantity'] == 'DIS':
             quant_unit = 'Displacement (m)'
-        elif data_quantity == 'VEL':
+        elif self.stats['data_quantity'] == 'VEL':
             quant_unit = 'Velocity (m/s)'
-        elif data_quantity == 'ACC':
-            quant_unit = 'Acceleration (m/s^2)'
+        elif self.stats['data_quantity'] == 'ACC':
+            quant_unit = 'Acceleration (m/s\u00B2)'
 
-        plot.plot_grid(map_x, map_y,
-                       self.get_snapshot(t, resolution=resolution),
-                       title='Discretized wave field after %g seconds' % t,
-                       quant_unit=quant_unit,
-                       **kwargs)
+        snapshots = self.get_snapshot(t, resolution=resolution)
+        for key, vals in snapshots.items():
+            src = key[-1]
+            if 'outfile' in kwargs:
+                outf = splitext(kwargs['outfile'])[0]
+                kwargs['outfile'] = outf + '.' + key + '.png'
+            plot.plot_grid(map_x, map_y, vals,
+                           title='Wave field of %s-comp. \
+source after %g seconds' % (src, t),
+                           quant_unit=quant_unit,
+                           **kwargs)
 
     def update_stats(self):
 
         if self.w != 'r':
             print('Updating stats...')
-            self.file['stats'].attrs['ntraces'] = self.data.shape[0]
-            self.file['stats'].attrs['nt'] = self.data.shape[-1]
-
+            self.file['stats'].attrs['ntraces'] =\
+                self.data[self.data.keys()[0]].shape[0]
+            self.file['stats'].attrs['nt'] = \
+                self.data[self.data.keys()[0]].shape[1]
             if 'stats' not in self.file.keys():
                 self.file.create_dataset('stats', data=(0,))
             for (key, value) in self.stats.items():
@@ -262,3 +272,4 @@ resetting to last sample.')
 
         self.update_stats()
         self.file.close()
+

@@ -34,7 +34,7 @@ class NoiseSource(object):
 
             # Presumably, these arrays are small and will be used very often
             # --> good to have in memory.
-            self.distr_basis = self.model['model'][:]
+            self.distr_basis = np.array(self.model['model'][:], ndmin=3)
             self.spect_basis = self.model['spectral_basis'][:]
 
             # The surface area of each grid element
@@ -55,12 +55,14 @@ class NoiseSource(object):
     def get_spect(self, iloc, by_index=True):
 
         # return one spectrum in location with index iloc
-        return np.dot(self.distr_basis[iloc, :],
+        return np.dot(self.distr_basis[:, iloc, :],
                       self.spect_basis)
 
     def plot(self, **options):
 
         # plot the distribution
-        for i in range(self.distr_basis.shape[-1]):
-            m = self.distr_basis[:, i]
-            plot_grid(self.src_loc[0], self.src_loc[1], m, **options)
+        for i in range(self.distr_basis.shape[0]):
+            for j in range(self.distr_basis.shape[-1]):
+                m = self.distr_basis[i, :, j]
+                plot_grid(self.src_loc[0], self.src_loc[1], m, **options)
+
