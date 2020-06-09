@@ -6,6 +6,7 @@
 # Remove those that are not needed
 
 - distribution: "homogeneous"
+  source_component: "z"
   mean_frequency_Hz: 0.05
   standard_deviation_Hz: 0.01
   weight: 0.01
@@ -13,6 +14,7 @@
   normalize_spectrum_to_unity: true
 
 - distribution: "ocean"
+  source_component: "z"
   mean_frequency_Hz: 0.05
   standard_deviation_Hz: 0.02
   weight: 0.5
@@ -20,6 +22,7 @@
   normalize_spectrum_to_unity: true
 
 - distribution: "gaussian_blob"
+  source_component: "z"
   center_latlon: [45.0, -4.0]
   sigma_m: 50000
   mean_frequency_Hz: 0.1
