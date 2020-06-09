@@ -10,6 +10,10 @@ import numpy as np
 from scipy.signal import hilbert
 from noisi.util.windows import get_window
 from math import log
+try:
+    from noisi.util.plot import plot_window
+except ImportError:
+    pass
 
 
 def square_envelope(correlation, g_speed, window_params):

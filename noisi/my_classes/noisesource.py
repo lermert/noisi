@@ -8,6 +8,10 @@ Class for handling noise source models in noisi
 """
 import numpy as np
 import h5py
+try:
+    from noisi.util.plot import plot_grid
+except ImportError:
+    print('Plotting unavailable, is cartopy installed?')
 
 
 class NoiseSource(object):

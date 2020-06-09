@@ -1,7 +1,11 @@
 from __future__ import print_function
 import numpy as np
 import h5py
-
+try:
+    from noisi.util import plot
+except ImportError:
+    print("No plotting possible (is cartopy installed?)", end='\n')
+    pass
 from noisi.util import filter
 try:
     from scipy.signal import sosfilt

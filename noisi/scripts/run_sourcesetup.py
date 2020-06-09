@@ -11,7 +11,13 @@ import errno
 from noisi import WaveField
 from noisi.util.geo import is_land, geographical_distances
 from noisi.util.geo import get_spherical_surface_elements
-create_plot = False
+try:
+    from noisi.util.plot import plot_grid
+    create_plot = True
+except ImportError:
+    create_plot = False
+    pass
+import matplotlib.pyplot as plt
 from math import pi, sqrt
 from warnings import warn
 import pprint
