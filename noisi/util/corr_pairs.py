@@ -105,9 +105,9 @@ def rem_fin_prs(stapairs, source_conf, step):
 
         if channel == "all":
             if source_conf["rotate_horizontal_components"]:
-                chas = ["R", "T", "Z"]
+                chas = ["MXR", "MXT", "MXZ"]
             else:
-                chas = ["E", "N", "Z"]
+                chas = ["MXE", "MXN", "MXZ"]
             for c1 in chas:
                 for c2 in chas:
                     cha1 = "{}.{}..{}".format(*(inf1[0: 2] + [c1]))
