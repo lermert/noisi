@@ -82,7 +82,11 @@ def rem_fin_prs(stapairs, source_conf, step):
 
     conf = yaml.safe_load(open(os.path.join(source_conf['project_path'],
                                             'config.yml')))
-    channel = 'MX' + conf['wavefield_channel']
+
+    if conf['wavefield_channel'] in ["E", "N", "Z", "e", "n", "z"]:
+        channel = 'MX' + conf['wavefield_channel']
+    elif conf["wavefield_channel"] == "all":
+        channel = "all"
 
     mod_dir = os.path.join(source_conf['source_path'],
                            'iteration_{}'.format(step), 'corr')
@@ -99,14 +103,28 @@ def rem_fin_prs(stapairs, source_conf, step):
             inf2 = sp[0].split()
             inf1 = sp[1].split()
 
-        sta1 = "{}.{}..{}".format(*(inf1[0: 2] + [channel]))
-        sta2 = "{}.{}..{}".format(*(inf2[0: 2] + [channel]))
+        if channel == "all":
+            if source_conf["rotate_horizontal_components"]:
+                chas = ["R", "T", "Z"]
+            else:
+                chas = ["E", "N", "Z"]
+            for c1 in chas:
+                for c2 in chas:
+                    cha1 = "{}.{}..{}".format(*(inf1[0: 2] + [c1]))
+                    cha2 = "{}.{}..{}".format(*(inf2[0: 2] + [c2]))
+                    corr_name = "{}--{}.sac".format(sta1, sta2)
 
-        corr_name = "{}--{}.sac".format(sta1, sta2)
-        corr_name = os.path.join(mod_dir, corr_name)
-        if not os.path.exists(corr_name):
+                    if not os.path.exists(corr_name):
+                        stapairs_new.append(sp)
+        else:
+            sta1 = "{}.{}..{}".format(*(inf1[0: 2] + [channel]))
+            sta2 = "{}.{}..{}".format(*(inf2[0: 2] + [channel]))
 
-            stapairs_new.append(sp)
+            corr_name = "{}--{}.sac".format(sta1, sta2)
+            corr_name = os.path.join(mod_dir, corr_name)
+            if not os.path.exists(corr_name):
+
+                stapairs_new.append(sp)
 
     return stapairs_new
 
