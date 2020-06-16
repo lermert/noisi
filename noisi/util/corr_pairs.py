@@ -112,7 +112,8 @@ def rem_fin_prs(stapairs, source_conf, step):
                 for c2 in chas:
                     cha1 = "{}.{}..{}".format(*(inf1[0: 2] + [c1]))
                     cha2 = "{}.{}..{}".format(*(inf2[0: 2] + [c2]))
-                    corr_name = "{}--{}.sac".format(sta1, sta2)
+                    corr_name = "{}--{}.sac".format(cha1, cha2)
+                    corr_name = os.path.join(mod_dir, corr_name)
 
                     if not os.path.exists(corr_name):
                         stapairs_new.append(sp)
