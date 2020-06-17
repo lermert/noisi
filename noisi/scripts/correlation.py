@@ -19,7 +19,7 @@ from obspy.signal.invsim import cosine_taper
 from noisi.util.windows import my_centered
 from noisi.util.geo import geograph_to_geocent
 from noisi.util.corr_pairs import define_correlationpairs
-from noisi.util.corr_pairs import rem_fin_prs, rem_no_obs
+from noisi.util.corr_pairs import rem_fin_prs, rem_no_obs, rem_no_gf
 from noisi.util.rotate_horizontal_components import apply_rotation
 try:
     import instaseis
@@ -113,6 +113,9 @@ def define_correlation_tasks(all_conf, comm, size, rank):
     if rank == 0 and all_conf.config['verbose']:
         print('Nr all possible correlation pairs %g ' % len(p))
 
+    p = rem_no_gf(p, all_conf.source_config)
+    if rank == 0:
+        print("Nr correlation components for which Green's functions are available: %g" %len(p))
     # Remove pairs for which no observation is available
     obs_only = all_conf.source_config['model_observed_only']
     if obs_only:
@@ -153,6 +156,7 @@ def define_correlation_tasks(all_conf, comm, size, rank):
         print('Nr correlation pairs after checking already calculated ones %g'
               % len(p))
         print(16 * '*')
+
 
     # The assignment of station pairs should be such that one core has as
     # many occurrences of the same station as possible;

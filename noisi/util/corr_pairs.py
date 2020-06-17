@@ -47,6 +47,32 @@ def define_correlationpairs(proj_dir, auto_corr=False,
     return corr_pairs
 
 
+def rem_no_gf(stapairs, source_conf):
+
+    conf = yaml.safe_load(open(os.path.join(source_conf['project_path'],
+                                            'config.yml')))
+    channel = conf['wavefield_channel']
+
+    stapairs_new = []
+    for i in range(len(stapairs)):
+        # Check if GFs available
+        if stapairs[i] == '':
+            break
+
+        gf1 = '{}.{}.*.MX{}.h5'.format(*(stapairs[i][0].split()[0: 2] + [channel]))
+        gf2 = '{}.{}.*.MX{}.h5'.format(*(stapairs[i][1].split()[0: 2] + [channel]))
+        
+        gf1 = glob(os.path.join(conf["project_path"], "greens", gf1))
+        if gf1 == []:
+            continue
+        gf2 = glob(os.path.join(conf["project_path"], "greens", gf2))
+        if gf2 == []:
+            continue
+
+        stapairs_new.append(stapairs[i])
+    return stapairs_new
+
+
 def rem_no_obs(stapairs, source_conf, directory, ignore_network=True):
 
     conf = yaml.safe_load(open(os.path.join(source_conf['project_path'],

@@ -109,9 +109,10 @@ and measr_config.yml to source model directory, please edit and rerun.")
     def setup_source_startingmodel(self, args):
 
         # plotting:
-        colors = ['purple', 'g', 'b', 'orange']
-        colors_cmaps = [plt.cm.Purples, plt.cm.Greens, plt.cm.Blues,
-                        plt.cm.Oranges]
+        if create_plot:
+            colors = ['purple', 'g', 'b', 'orange']
+            colors_cmaps = [plt.cm.Purples, plt.cm.Greens, plt.cm.Blues,
+                            plt.cm.Oranges]
         print("Setting up source starting model.", end="\n")
         with io.open(os.path.join(args.source_model,
                                   'source_config.yml'), 'r') as fh:
