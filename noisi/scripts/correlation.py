@@ -153,6 +153,7 @@ def define_correlation_tasks(all_conf, comm, size, rank):
     # Remove pairs that have already been calculated
     p = rem_fin_prs(p, all_conf.source_config, all_conf.step)
     if rank == 0 and all_conf.config['verbose']:
+        print(p)
         print('Nr correlation pairs after checking already calculated ones %g'
               % len(p))
         print(16 * '*')

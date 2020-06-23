@@ -51,7 +51,10 @@ def rem_no_gf(stapairs, source_conf):
 
     conf = yaml.safe_load(open(os.path.join(source_conf['project_path'],
                                             'config.yml')))
-    channel = conf['wavefield_channel']
+    if conf['wavefield_channel'] in ["E", "N", "Z", "e", "n", "z"]:
+        channel = 'MX' + conf['wavefield_channel']
+    elif conf["wavefield_channel"] == "all":
+        channel = "all"
 
     stapairs_new = []
     for i in range(len(stapairs)):
@@ -59,17 +62,37 @@ def rem_no_gf(stapairs, source_conf):
         if stapairs[i] == '':
             break
 
-        gf1 = '{}.{}.*.MX{}.h5'.format(*(stapairs[i][0].split()[0: 2] + [channel]))
-        gf2 = '{}.{}.*.MX{}.h5'.format(*(stapairs[i][1].split()[0: 2] + [channel]))
-        
-        gf1 = glob(os.path.join(conf["project_path"], "greens", gf1))
-        if gf1 == []:
-            continue
-        gf2 = glob(os.path.join(conf["project_path"], "greens", gf2))
-        if gf2 == []:
-            continue
+        if channel != "all":
+            gf1 = '{}.{}.*.MX{}.h5'.format(*(stapairs[i][0].split()[0: 2] + [channel]))
+            gf2 = '{}.{}.*.MX{}.h5'.format(*(stapairs[i][1].split()[0: 2] + [channel]))
+            
+            gf1 = glob(os.path.join(conf["project_path"], "greens", gf1))
+            if gf1 == []:
+                continue
+            gf2 = glob(os.path.join(conf["project_path"], "greens", gf2))
+            if gf2 == []:
+                continue
+            if stapairs[i] not in stapairs_new:
+                stapairs_new.append(stapairs[i])
+        else:
+            if source_conf["rotate_horizontal_components"]:
+                chas = ["MXR", "MXT", "MXZ"]
+            else:
+                chas = ["MXE", "MXN", "MXZ"]
+            for c1 in chas:
+                for c2 in chas:
+                    gf1 = '{}.{}.*.{}.h5'.format(*(stapairs[i][0].split()[0: 2] + [c1]))
+                    gf2 = '{}.{}.*.{}.h5'.format(*(stapairs[i][1].split()[0: 2] + [c2]))
+                    
+                    gf1 = glob(os.path.join(conf["project_path"], "greens", gf1))
+                    if gf1 == []:
+                        continue
+                    gf2 = glob(os.path.join(conf["project_path"], "greens", gf2))
+                    if gf2 == []:
+                        continue
+                    if stapairs[i] not in stapairs_new:
+                        stapairs_new.append(stapairs[i])
 
-        stapairs_new.append(stapairs[i])
     return stapairs_new
 
 
@@ -78,7 +101,10 @@ def rem_no_obs(stapairs, source_conf, directory, ignore_network=True):
     conf = yaml.safe_load(open(os.path.join(source_conf['project_path'],
                                             'config.yml')))
     channel = conf['wavefield_channel']
-    channel = '??' + channel[-1]
+    if channel == "all":
+        channel = "all"
+    else:
+        channel = '??' + channel[-1]
 
     stapairs_new = []
     for i in range(len(stapairs)):
@@ -86,13 +112,28 @@ def rem_no_obs(stapairs, source_conf, directory, ignore_network=True):
         if stapairs[i] == '':
             break
 
-        sta1 = '{}.{}.*.{}'.format(*(stapairs[i][0].split()[0: 2] + [channel]))
-        sta2 = '{}.{}.*.{}'.format(*(stapairs[i][1].split()[0: 2] + [channel]))
-        p_new = glob_obs_corr(sta1, sta2, directory, ignore_network)
-
-        if p_new == []:
-            continue
-        stapairs_new.append(stapairs[i])
+        if channel != "all":
+            sta1 = '{}.{}.*.{}'.format(*(stapairs[i][0].split()[0: 2] + [channel]))
+            sta2 = '{}.{}.*.{}'.format(*(stapairs[i][1].split()[0: 2] + [channel]))
+            p_new = glob_obs_corr(sta1, sta2, directory, ignore_network)
+            if p_new == []:
+                continue
+            stapairs_new.append(stapairs[i])
+        else:
+            if source_conf["rotate_horizontal_components"]:
+                chas = ["MXR", "MXT", "MXZ"]
+            else:
+                chas = ["MXE", "MXN", "MXZ"]
+            for c1 in chas:
+                for c2 in chas:
+                    sta1 = '{}.{}.*.{}'.format(*(stapairs[i][0].split()[0: 2] + [channel]))
+                    sta2 = '{}.{}.*.{}'.format(*(stapairs[i][1].split()[0: 2] + [channel]))
+                    p_new = glob_obs_corr(sta1, sta2, directory, ignore_network)
+                    if p_new == []:
+                        continue
+                    if stapairs[i] not in stapairs_new:
+                        stapairs_new.append(stapairs[i])
+       
     return stapairs_new
 
 
@@ -136,12 +177,13 @@ def rem_fin_prs(stapairs, source_conf, step):
                 chas = ["MXE", "MXN", "MXZ"]
             for c1 in chas:
                 for c2 in chas:
-                    cha1 = "{}.{}..{}".format(*(inf1[0: 2] + [c1]))
-                    cha2 = "{}.{}..{}".format(*(inf2[0: 2] + [c2]))
+                    sta1 = "{}.{}..{}".format(*(inf1[0: 2] + [c1]))
+                    sta2 = "{}.{}..{}".format(*(inf2[0: 2] + [c2]))
                     corr_name = "{}--{}.sac".format(sta1, sta2)
 
                     if not os.path.exists(corr_name):
-                        stapairs_new.append(sp)
+                        if sp not in stapairs_new:
+                            stapairs_new.append(sp)
         else:
             sta1 = "{}.{}..{}".format(*(inf1[0: 2] + [channel]))
             sta2 = "{}.{}..{}".format(*(inf2[0: 2] + [channel]))

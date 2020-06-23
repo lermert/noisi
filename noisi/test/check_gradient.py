@@ -27,7 +27,7 @@ size = comm.Get_size()
 # input:
 # *********************************************
 steps = np.arange(-6, 1, 0.1)
-mtype = 'full_waveform' #'ln_energy_ratio'
+mtype = "full_waveform" #'ln_energy_ratio'
 g_speed = 3000.
 window_params = {}
 window_params['bandpass'] = None
