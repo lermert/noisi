@@ -125,27 +125,27 @@ def define_correlation_tasks(all_conf, comm, size, rank):
         else:
             directory = os.path.join(all_conf.source_config['source_path'],
                                      'observed_correlations')
-        if rank == 0:
-            # split p into size lists for comm.scatter()
-            p_split = np.array_split(p, size)
-            p_split = [k.tolist() for k in p_split]
-        else:
-            p_split = None
+        # if rank == 0:
+        #     # split p into size lists for comm.scatter()
+        #     p_split = np.array_split(p, size)
+        #     p_split = [k.tolist() for k in p_split]
+        # else:
+        #     p_split = None
 
         # scatter p_split to ranks
-        p_split = comm.scatter(p_split, root=0)
-        p_split = rem_no_obs(p_split, all_conf.source_config,
+        # p_split = comm.scatter(p_split, root=0)
+        p = rem_no_obs(p, all_conf.source_config,
                              directory=directory)
 
         # gather all on rank 0
-        p_new = comm.gather(list(p_split), root=0)
+        #p_new = comm.gather(list(p_split), root=0)
 
         # put all back into one array p
-        if rank == 0:
-            p = [i for j in p_new for i in j]
+        #if rank == 0:
+        #    p = [i for j in p_new for i in j]
 
         # broadcast p to all ranks
-        p = comm.bcast(p, root=0)
+        #p = comm.bcast(p, root=0)
         if rank == 0 and all_conf.config['verbose']:
             print('Nr correlation pairs after checking available observ. %g '
                   % len(p))
@@ -153,7 +153,7 @@ def define_correlation_tasks(all_conf, comm, size, rank):
     # Remove pairs that have already been calculated
     p = rem_fin_prs(p, all_conf.source_config, all_conf.step)
     if rank == 0 and all_conf.config['verbose']:
-        print(p)
+        #print(p)
         print('Nr correlation pairs after checking already calculated ones %g'
               % len(p))
         print(16 * '*')
