@@ -262,7 +262,7 @@ def compute_kernel(input_files, output_file, all_conf, nsrc, all_ns, taper,
                 for j in range(len(f)):
                     delta = f[j].stats.delta
                     kern[ix_spec, ix_f, i, j] = np.dot(corr_temp,
-                                                       f[j].data) * delta * nsrc.surf_area[i]
+                                                       f[j].data) * delta
 
             if i % print_each_n == 0 and all_conf.config['verbose']:
                 print("Finished {} of {} source locations.".format(i, ntraces))
