@@ -63,8 +63,8 @@ def rem_no_gf(stapairs, source_conf):
             break
 
         if channel != "all":
-            gf1 = '{}.{}.*.MX{}.h5'.format(*(stapairs[i][0].split()[0: 2] + [channel]))
-            gf2 = '{}.{}.*.MX{}.h5'.format(*(stapairs[i][1].split()[0: 2] + [channel]))
+            gf1 = '{}.{}.*.{}.h5'.format(*(stapairs[i][0].split()[0: 2] + [channel]))
+            gf2 = '{}.{}.*.{}.h5'.format(*(stapairs[i][1].split()[0: 2] + [channel]))
             
             gf1 = glob(os.path.join(conf["project_path"], "greens", gf1))
             if gf1 == []:
