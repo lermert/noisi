@@ -436,7 +436,6 @@ def run_corr(args, comm, size, rank):
                                stationlistfile=os.path.join(all_conf.source_config['project_path'],
                                "stationlist.csv"), output_directory=os.path.join(it_dir, "corr"))
 
-    comm.barrier()
     if rank == 0:
         if all_conf.source_config["rotate_horizontal_components"]:
             fls_to_remove = glob(os.path.join(it_dir, "corr", "*MX[E,N]*MX[E,N]*.sac"))
