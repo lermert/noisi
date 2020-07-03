@@ -301,11 +301,22 @@ def compute_correlation(input_files, all_conf, nsrc, all_ns, taper,
 
     # Loop over source locations
     print_each_n = max(5, round(max(ntraces // 5, 1), -1))
+    
+    # preload wavefield and spectrum
+    S_all = nsrc.get_spect_all()
+    wf1_data = np.asarray(wf1.data)
+    wf2_data = np.asarray(wf2.data)
+    
+    
+    
+    
+    
     for i in range(ntraces):
 
         # noise source spectrum at this location
-        S = nsrc.get_spect(i)
-
+        #S = nsrc.get_spect(i)
+        S = S_all[i,:]
+        
         if S.sum() == 0.:
             # If amplitude is 0, continue. (Spectrum has 0 phase anyway.)
             continue
@@ -330,14 +341,14 @@ def compute_correlation(input_files, all_conf, nsrc, all_ns, taper,
         else:
             if not wf1.fdomain:
                 # read Green's functions
-                s1 = np.ascontiguousarray(wf1.data[i, :] * taper)
-                s2 = np.ascontiguousarray(wf2.data[i, :] * taper)
+                s1 = np.ascontiguousarray(wf1_data[i, :] * taper)
+                s2 = np.ascontiguousarray(wf2_data[i, :] * taper)
                 # Fourier transform for greater ease of convolution
                 spec1 = np.fft.rfft(s1, n)
                 spec2 = np.fft.rfft(s2, n)
             else:
-                spec1 = np.ascontiguousarray(wf1.data[i, :])
-                spec2 = np.ascontiguousarray(wf2.data[i, :])
+                spec1 = np.ascontiguousarray(wf1_data[i, :])
+                spec2 = np.ascontiguousarray(wf2_data[i, :])
 
         # convolve G1G2
         g1g2_tr = np.multiply(np.conjugate(spec1), spec2)
