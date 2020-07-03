@@ -1,3 +1,11 @@
+"""
+Plotting for noisi
+:copyright:
+    noisi development team
+:license:
+    GNU Lesser General Public License, Version 3 and later
+    (https://www.gnu.org/copyleft/lesser.html)
+"""
 # plotting on the map
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
