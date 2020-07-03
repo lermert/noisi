@@ -197,15 +197,23 @@ def compute_kernel(input_files, output_file, all_conf, nsrc, all_ns, taper,
             map_temp_datasets[ix_spec] = dtmp
 
     # Loop over locations
-    print_each_n = max(5, round(max(ntraces // 3, 1), -1))
+
+    print_each_n = max(5, round(max(ntraces // 5, 1), -1))
+    
+    # preload wavefield and spectrum
+    S_all = nsrc.get_spect_all()
+    wf1_data = np.asarray(wf1.data)
+    wf2_data = np.asarray(wf2.data)
+    
     for i in range(ntraces):
 
         # noise source spectrum at this location
         # For the kernel, this contains only the basis functions of the
         # spectrum without weights; might still be location-dependent,
         # for example when constraining sensivity to ocean
-        S = nsrc.get_spect(i)
-
+        #S = nsrc.get_spect(i)
+        S = S_all[i,:]
+        
         if S.sum() == 0.:
             # The spectrum has 0 phase so only checking
             # absolute value here
@@ -228,15 +236,15 @@ def compute_kernel(input_files, output_file, all_conf, nsrc, all_ns, taper,
 
         else:
             if not wf1.fdomain:
-                s1 = np.ascontiguousarray(wf1.data[i, :] * taper)
-                s2 = np.ascontiguousarray(wf2.data[i, :] * taper)
+                s1 = np.ascontiguousarray(wf1_data[i, :] * taper)
+                s2 = np.ascontiguousarray(wf2_data[i, :] * taper)
                 # if horizontal component rotation: perform it here
                 # more convenient before FFT to avoid additional FFTs
                 spec1 = np.fft.rfft(s1, n)
                 spec2 = np.fft.rfft(s2, n)
             else:
-                spec1 = wf1.data[i, :]
-                spec2 = wf2.data[i, :]
+                spec1 = wf1_data[i, :]
+                spec2 = wf2_data[i, :]
 
         g1g2_tr = np.multiply(np.conjugate(spec1), spec2)
         # spectrum
