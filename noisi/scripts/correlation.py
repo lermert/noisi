@@ -1,4 +1,11 @@
-# from mpi4py import MPI
+"""
+Collection of correlation functions for noisi
+:copyright:
+    noisi development team
+:license:
+    GNU Lesser General Public License, Version 3 and later
+    (https://www.gnu.org/copyleft/lesser.html)
+"""
 import numpy as np
 import os
 import yaml

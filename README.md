@@ -23,11 +23,12 @@ If you encounter problems with mpi4py, try removing it and reinstalling it using
 Clone the repository with git:
 `git clone https://github.com/lermert/noisi.git`
 
-Change into the `noisi/` or `noisi-master/` directory. Call `pip install -v .` here.
+Change into the `noisi_v1/` directory. Call `pip install .` here, or call `pip install -v -e .` if you intend to modify the code.
 
-After installation, consider running `pytest` in the `noisi/noisi` directory and let us know of any errors it produces (warnings are o.k.). 
+After installation, change to the `noisi/noisi` directory and run `pytest`. If you encounter any errors (warnings are o.k.), we'll be grateful if you let us know. 
 
 ### Getting started
 To see an overview of the tool, type `noisi --help`.
-A step-by-step tutorial for jupyter notebook can be found in the `noisi/noisi` directory: noisi\_introduction.ipynb.
+A step-by-step tutorial for jupyter notebook as well as examples on how to set up an inversion and how to import a wavefield from axisem3d are found in the noisi/examples directory.
+
 

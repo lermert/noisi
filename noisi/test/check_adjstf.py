@@ -1,10 +1,19 @@
+"""
+Adjoint source check for noisi
+:copyright:
+    noisi development team
+:license:
+    GNU Lesser General Public License, Version 3 and later
+    (https://www.gnu.org/copyleft/lesser.html)
+"""
 import numpy as np
 import matplotlib.pyplot as plt
 from obspy import Trace
 from noisi.scripts import measurements as rm
 from noisi.scripts import adjnt_functs as af
 
-# more or less replicating Korbi's test with my measurement and adjoint source
+# more or less replicating Korbi's test 
+# with noisi measurement and adjoint source
 # *********************************************
 # input:
 # *********************************************
