@@ -2,6 +2,7 @@ date_created: 2019.04.30
 project_name: testdata_v1
 project_path: ./test/testdata_v1
 verbose: true
+load_to_memory: true
 grid_dx: 50000
 grid_lat_min: -1.0
 grid_lat_max: 1.0

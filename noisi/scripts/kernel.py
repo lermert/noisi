@@ -212,19 +212,26 @@ def compute_kernel(input_files, output_file, all_conf, nsrc, all_ns, taper,
     print_each_n = max(5, round(max(ntraces // 5, 1), -1))
     
     # preload wavefield and spectrum
-    S_all = nsrc.get_spect_all()
-    wf1_data = np.asarray(wf1.data)
-    wf2_data = np.asarray(wf2.data)
-    
+    if all_conf.config["load_to_memory"]:
+        S_all = nsrc.get_spect_all()
+        wf1_data = np.asarray(wf1.data)
+        wf2_data = np.asarray(wf2.data)
+    else:
+        S_all = None
+        wf1_data = wf1.data
+        wf2_data = wf2.data
+        
     for i in range(ntraces):
 
         # noise source spectrum at this location
         # For the kernel, this contains only the basis functions of the
         # spectrum without weights; might still be location-dependent,
         # for example when constraining sensivity to ocean
-        #S = nsrc.get_spect(i)
-        S = S_all[i,:]
-        
+        if S_all is not None:
+            S = S_all[i,:]
+        else:
+            S = nsrc.get_spect(i)
+            
         if S.sum() == 0.:
             # The spectrum has 0 phase so only checking
             # absolute value here

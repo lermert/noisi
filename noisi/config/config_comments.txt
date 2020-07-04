@@ -1,31 +1,35 @@
 
-# date_created: added automatically, no need to edit
-# project_name: added automatically, no need to edit
-# project_path: added automatically, no need to edit
-# verbose: Print info or not (set to false for large runs)
-# grid_dx_in_m: grid step in meters. 
+# date_created: (string) added automatically, no need to edit
+# project_name: (string) added automatically, no need to edit
+# project_path: (string) added automatically, no need to edit
+# verbose: (bool) Print info or not (set to false for large runs)
+# load_to_memory: (bool) If set to true, arrays of Green's functions and
+# noise source model are loaded to memory. This decreases runtime but
+# increases memory consumption. Set to false if using densely sampled
+# wavefields (in space or time).
+# grid_dx_in_m: (float) grid step in meters. 
 # At the equator, 1 degree of latitude is approx. 110.5 km
-# grid_lat_min: minimum lat in degrees (-90 - 90) 
-# grid_lat_max: maximum lat in degrees (-90 - 90)
-# grid_lon_min: minimum lon in degrees (-180 - 180)
-# grid_lon_max: maximum lon in degrees (-180 - 180)
-# synt_data: specify if your synthetics shall be displacement
+# grid_lat_min: (float) minimum lat in degrees (-90 - 90) 
+# grid_lat_max: (float) maximum lat in degrees (-90 - 90)
+# grid_lon_min: (float) minimum lon in degrees (-180 - 180)
+# grid_lon_max: (float) maximum lon in degrees (-180 - 180)
+# synt_data: (string) specify if your synthetics shall be displacement
 #                (DIS), velocity (VEL) or acceleration (ACC)
-# wavefield_type: set here the type of wavefield you want to use: 
+# wavefield_type: (string) set here the type of wavefield you want to use: 
 # -- analytic (analytic Green's function for homogeneous membrane wave)
 # -- instaseis (use instaseis; need to specify the path to the instaseis
 #    database as wavefield_path)
 # -- custom (you need to prepare your own wave field if this is set, and
 #    specify the path to the files as wavefield_path)
-# wavefield_point_force: Force in N applied by each noise source. Note that if 
+# wavefield_point_force: (float) Force in N applied by each noise source. Note that if 
 # setting this very low, the amplitude of the correlations will become very 
 # small, and problems with numerical precision can arise.
-# wavefield_path: set here the path to instaseis database or your wavefield
+# wavefield_path: (string) set here the path to instaseis database or your wavefield
 # database from another solver (not needed for analytic Green's functions)
-# wavefield_sampling_rate: Sampling rate for the instaseis or analytic 
-# wavefield_domain: Save in "fourier" or "time" domain 
+# wavefield_sampling_rate: (float) Sampling rate for the instaseis or analytic 
+# wavefield_domain: (string) Save in "fourier" or "time" domain 
 # waveforms green's functions in Hz.
-# wavefield_duration: Duration of prepared green's functions in seconds.
-# wavefield_filter: [freq_min, freq_max] of prepared green's functions in Hz.
-# wavefield_channel: Synthetics channel (of recording), Z, E, N or "all". This
+# wavefield_duration: (float) Duration of prepared green's functions in seconds.
+# wavefield_filter: (list of floats) [freq_min, freq_max] of prepared green's functions in Hz.
+# wavefield_channel: (string) Synthetics channel (of recording), Z, E, N or "all". This
 # also determines which correlation channels (ZZ, ZE, ZN...NN...) are computed.
