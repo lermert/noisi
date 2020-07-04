@@ -1,11 +1,3 @@
-"""
-Tests for noisi
-:copyright:
-    noisi development team
-:license:
-    GNU Lesser General Public License, Version 3 and later
-    (https://www.gnu.org/copyleft/lesser.html)
-"""
 from noisi.scripts.run_wavefieldprep import precomp_wavefield
 from noisi.scripts import adjnt_functs as am
 from noisi.scripts import measurements as rm
@@ -255,7 +247,7 @@ def test_sensitivity_kernel():
     taper[0: ns[0] // 2] = 1.0
     kernel = compute_kernel(input_files[0], output_file, all_config,
                             NoiseSource(nsrc), ns, taper)
-    np.save("newtestkernel.npy", kernel)
+
     saved_kernel = np.load(os.path.join('test', 'testdata_v1', 'testdata',
                                         'NET.STA1..MXZ--NET.STA2..MXZ.0.npy'))
-    assert np.allclose(kernel / kernel.max(), saved_kernel / saved_kernel.max())
+    assert np.allclose(kernel, saved_kernel)

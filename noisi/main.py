@@ -1,11 +1,3 @@
-"""
-Main routine of noisi
-:copyright:
-    noisi development team
-:license:
-    GNU Lesser General Public License, Version 3 and later
-    (https://www.gnu.org/copyleft/lesser.html)
-"""
 import argparse
 from mpi4py import MPI
 from noisi.scripts.source_grid import setup_sourcegrid as setup_sgrid

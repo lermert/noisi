@@ -148,7 +148,7 @@ def measurement(source_config, mtype, step, ignore_net,
         # single value measurements:
         else:
             if mtype == 'energy_diff':
-                l2_so = 0.5 * (msr_s - msr_o)**2 / (msr_o) ** 2
+                l2_so = 0.5 * (msr_s - msr_o)**2
                 msr = msr_o[0]
                 msr_a = msr_o[1]
                 snr = snratio(tr_o, **options)
@@ -161,7 +161,7 @@ def measurement(source_config, mtype, step, ignore_net,
                 for ix_branch in range(2):
                     adjoint_source[ix_branch].data = adjt[ix_branch]
                     adjoint_source[ix_branch].data *= (msr_s[ix_branch] -
-                                                       msr_o[ix_branch]) / msr_o[ix_branch] ** 2
+                                                       msr_o[ix_branch])
 
             elif mtype == 'ln_energy_ratio':
                 l2_so = 0.5 * (msr_s - msr_o)**2

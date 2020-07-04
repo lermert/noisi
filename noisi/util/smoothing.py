@@ -1,14 +1,14 @@
-"""
-Smoothing routine for noisi
-:copyright:
-    noisi development team
-:license:
-    GNU Lesser General Public License, Version 3 and later
-    (https://www.gnu.org/copyleft/lesser.html)
-"""
 import numpy as np
 from math import sqrt, pi
 import sys
+# from mpi4py import MPI
+# Gaussian convolution, determining the distance
+# in cartesian coordinates.
+# # initialize parallel comm
+# comm = MPI.COMM_WORLD
+# size = comm.Get_size()
+# rank = comm.Get_rank()
+
 
 def get_distance(gridx, gridy, gridz, x, y, z):
     xd = gridx - x

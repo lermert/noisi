@@ -1,11 +1,3 @@
-"""
-Measurements on correlation traces used in noisi
-:copyright:
-    noisi development team
-:license:
-    GNU Lesser General Public License, Version 3 and later
-    (https://www.gnu.org/copyleft/lesser.html)
-"""
 import numpy as np
 from scipy.signal import hilbert
 from noisi.util.windows import get_window

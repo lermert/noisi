@@ -1,11 +1,5 @@
-"""
-Sensitivity kernel calculating for noisi
-:copyright:
-    noisi development team
-:license:
-    GNU Lesser General Public License, Version 3 and later
-    (https://www.gnu.org/copyleft/lesser.html)
-"""
+from __future__ import print_function
+# from mpi4py import MPI
 import numpy as np
 import os
 from glob import glob
@@ -27,6 +21,24 @@ try:
     import instaseis
 except ImportError:
     pass
+
+
+# def perform_rotation(rot_task, projdir, s1, s2, sta1, sta2):
+
+#     # find the station station backazimuth
+#     datfile = os.path.join(projdir, "stationlist.csv")https://www.sueddeutsche.de/politik/coronavirus-infektionsschutzgesetz-thorsten-kingreen-jens-spahn-1.4857021?reduced=true
+#     dat = read_csv(datfile)
+#     lat1 = float(dat[dat.sta == sta1]["lat"])
+#     lon1 = float(dat[dat.sta == sta1]["lon"])
+#     lat2 = float(dat[dat.sta == sta2]["lat"])
+#     lon2 = float(dat[dat.sta == sta2]["lat"])
+#     baz = radians(gps2dist_azimuth(lat1, lon1, lat2, lon2)[2])
+
+#     if rot_task == "NR":
+#         return(-cos(baz) * s1 - sin(baz) * s2)
+#     elif rot_task == "ET":
+#         return(sin(baz) * s2 - cos(baz) * s1)
+
 
 
 def add_input_files(kp, all_conf, insta=False):
@@ -150,9 +162,8 @@ def compute_kernel(input_files, output_file, all_conf, nsrc, all_ns, taper,
     if None in adjt_srcs:
         return(None)
     else:
-        if all_conf.config["verbose"]:
-            print("========================================")
-            print("Computing: " + output_file)
+        print("========================================")
+        print("Computing: " + output_file)
     # Uniform spatial weights. (current model is in the adjoint source)
     nsrc.distr_basis = np.ones(nsrc.distr_basis.shape)
     ntraces = nsrc.src_loc[0].shape[0]
@@ -186,6 +197,7 @@ def compute_kernel(input_files, output_file, all_conf, nsrc, all_ns, taper,
 
     kern = np.zeros((nsrc.spect_basis.shape[0],
                      all_conf.filtcnt, ntraces, len(adjt)))
+
     if all_conf.source_config["rotate_horizontal_components"]:
         tempfile = output_file + ".h5_temp"
         temp = wf1.copy_setup(tempfile, ntraces=ntraces, nt=n_corr)
@@ -197,7 +209,6 @@ def compute_kernel(input_files, output_file, all_conf, nsrc, all_ns, taper,
             map_temp_datasets[ix_spec] = dtmp
 
     # Loop over locations
-
     print_each_n = max(5, round(max(ntraces // 5, 1), -1))
     
     # preload wavefield and spectrum
