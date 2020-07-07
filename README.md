@@ -20,10 +20,15 @@ Install jupyter notebook if you intend to run the tutorial (see below).
 
 If you encounter problems with mpi4py, try removing it and reinstalling it using pip (`pip install mpi4py`).
 
+#### Install pre-packaged
+After installing the dependencies, run 
+`pip install noisi`
+
+#### Install editable for further development
 Clone the repository with git:
 `git clone https://github.com/lermert/noisi.git`
 
-Change into the `noisi_v1/` directory. Call `pip install .` here, or call `pip install -v -e .` if you intend to modify the code.
+Change into the `noisi_v1/` directory. Call `pip install -v -e .` here.
 
 After installation, change to the `noisi/noisi` directory and run `pytest`. If you encounter any errors (warnings are o.k.), we'll be grateful if you let us know. 
 
