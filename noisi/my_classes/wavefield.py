@@ -12,7 +12,7 @@ import h5py
 try:
     from noisi.util import plot
 except ImportError:
-    print("NO plotting possible (is cartopy installed?)", end='\n')
+    print("Plotting unavailable (is cartopy installed?)", end='\n')
     pass
 from noisi.util import filter
 try:
