@@ -15,7 +15,7 @@ setup(
     license = 'GNU Lesser General Public License, Version 3 (LGPLv3) or later',
     classifiers = [
         'Development Status :: 4 - Beta',
-        'Topic :: Scientific/Engineering :: Earth Sciences',
+        'Topic :: Scientific/Engineering :: Physics',
         'License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)',
         'Topic :: Scientific/Engineering',
         'Programming Language :: Python :: 3',
