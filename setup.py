@@ -9,7 +9,7 @@ setup(
     description = 'Package to calculate noise correlations from precomputed\
  seismic wavefields',
     #long_description =
-    url = 'https://github.com/lermert/noisi' 
+    url = 'https://github.com/lermert/noisi', 
     author = 'L. Ermert, J. Igel, A. Fichtner',
     author_email  = 'lermert@fas.harvard.edu, jonas.igel@erdw.ethz.ch',
     license = 'GNU Lesser General Public License, Version 3 (LGPLv3) or later',
