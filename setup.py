@@ -5,18 +5,22 @@ from setuptools import setup, find_packages
 
 setup(
     name = 'noisi',
-    version = '0.0.0a0',
+    version = '0.1.0',
     description = 'Package to calculate noise correlations from precomputed\
  seismic wavefields',
     #long_description =
-    # url = 
+    url = 'https://github.com/lermert/noisi' 
     author = 'L. Ermert, J. Igel, A. Fichtner',
-    author_email  = 'laura.ermert@earth.ox.ac.uk, jigel@student.ethz.ch',
-    # license
+    author_email  = 'lermert@fas.harvard.edu, jonas.igel@erdw.ethz.ch',
+    license = 'GNU Lesser General Public License, Version 3 (LGPLv3) or later',
     classifiers = [
-        'Development Status :: 3 - Alpha',
-        'Topic :: Seismology',
+        'Development Status :: 4 - Beta',
+        'Topic :: Scientific/Engineering :: Earth Sciences',
+        'License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)',
+        'Topic :: Scientific/Engineering',
         'Programming Language :: Python :: 3',
+        'Operating System :: OS Independent',
+        'Environment :: Console'
     ],
     keywords = 'Ambient seismic noise',
     packages = find_packages(),
@@ -38,7 +42,6 @@ setup(
         "pandas",
         "h5py",
         "PyYaml",
-        "cartopy",
         "jupyter",
         "pytest"],
     entry_points = {
