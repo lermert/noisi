@@ -20,9 +20,10 @@ class WaveField(object):
     Methods to work on wavefields stored in an hdf5 file.
     """
 
-    def __init__(self, file, sourcegrid=None, w='r'):
+    def __init__(self, file, sourcegrid=None, w='r', preload=False):
         self.w = w
         self.data = {}
+        self.preload = preload
 
         try:
             self.file = h5py.File(file, self.w)
@@ -33,6 +34,8 @@ class WaveField(object):
         self.stats = dict(self.file['stats'].attrs)
         self.fdomain = self.stats['fdomain']
         self.sourcegrid = self.file['sourcegrid']
+        self.datakeys = []
+
         if 'npad' not in self.stats:
             if self.fdomain:
                 self.stats['npad'] = 2 * self.stats['nt'] - 2
@@ -40,21 +43,39 @@ class WaveField(object):
                 self.stats['npad'] = next_fast_len(2 * self.stats['nt'] - 1)
 
         try:
-            self.data['data'] = self.file['data']
+            if self.preload:
+                self.data["data"] = self.file["data"][:]
+            else:
+                self.data['data'] = self.file['data']
         except KeyError:
             pass
 
         # traction source Green's functions
         try:
-            self.data['data_fz'] = self.file['data_fz']
+            if self.preload:
+                self.data['data_fz'] = self.file['data_fz'][:]
+                print(type(self.data["data_fz"]))
+                print(self.data["data_fz"].shape)
+            else:
+                self.data['data_fz'] = self.file['data_fz']
         except KeyError:
             pass
+        
         try:
-            self.data['data_fn'] = self.file['data_fn']
+            if self.preload:
+                self.data['data_fn'] = self.file['data_fn'][:]
+            else:
+                self.data['data_fn'] = self.file['data_fn']
+
         except KeyError:
             pass
+
         try:
-            self.data['data_fe'] = self.file['data_fe']
+            if self.preload:
+                self.data['data_fe'] = self.file['data_fe'][:]
+            else:
+                self.data['data_fe'] = self.file['data_fe']
+
         except KeyError:
             pass
 
@@ -65,11 +86,12 @@ class WaveField(object):
             self.freq = np.fft.rfftfreq(self.stats['npad'],
                                         d=1. / self.stats['Fs'])
 
+
     def get_green(self, ix=None, by_index=True):
 
         if by_index:
             data_out = np.empty((len(self.data), self.stats['nt']))
-            for ix_data, key in enumerate(self.data.keys()):
+            for ix_data, key in enumerate(self.datakeys):
                 data_out[ix_data, :] = self.data[key][ix, :]
             return(data_out)
         else:
@@ -97,7 +119,7 @@ class WaveField(object):
         print('Copied setup of ' + self.file.filename)
         file.close()
 
-        return(WaveField(newfile, w=self.w, fdomain=self.fdomain))
+        return(WaveField(newfile, w=self.w, fdomain=self.fdomain, preload=self.preload))
 
     def truncate(self, newfile, truncate_after_seconds):
 

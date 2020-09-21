@@ -51,8 +51,7 @@ class config_params(object):
             self.measr_config = yaml.safe_load(mconf)
 
         if self.config['wavefield_channel'] == "all":
-            self.output_channels = ["ZZ", "ZN", "ZE", "NZ", "NN", "NE",
-                                    "EZ", "EN", "EE"]
+            self.output_channels = ["ZZ", "ZN", "ZE","NN", "NE", "EE"]
         else:
             self.output_channels = [2 * self.config["wavefield_channel"]]
 
@@ -242,8 +241,10 @@ def compute_correlation(input_files, all_conf, nsrc, all_ns, taper,
     correlation = np.zeros(n_corr)
 
 
-    wf1 = WaveField(wf1)
-    wf2 = WaveField(wf2)
+    wf1 = WaveField(wf1, preload=all_conf.config["preload"])
+    wf2 = WaveField(wf2, preload=all_conf.config["preload"])
+
+
     station1 = wf1.stats['reference_station']
     station2 = wf2.stats['reference_station']
 

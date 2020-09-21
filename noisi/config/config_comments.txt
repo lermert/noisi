@@ -11,6 +11,8 @@
 # grid_lon_max: maximum lon in degrees (-180 - 180)
 # synt_data: specify if your synthetics shall be displacement
 #                (DIS), velocity (VEL) or acceleration (ACC)
+# preload: Load full green's function array in memory or not. Uses 
+# a lot of memory, but decreases I/O operations
 # wavefield_type: set here the type of wavefield you want to use: 
 # -- analytic (analytic Green's function for homogeneous membrane wave)
 # -- instaseis (use instaseis; need to specify the path to the instaseis
