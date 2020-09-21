@@ -54,8 +54,6 @@ class WaveField(object):
         try:
             if self.preload:
                 self.data['data_fz'] = self.file['data_fz'][:]
-                print(type(self.data["data_fz"]))
-                print(self.data["data_fz"].shape)
             else:
                 self.data['data_fz'] = self.file['data_fz']
         except KeyError:
@@ -91,7 +89,7 @@ class WaveField(object):
 
         if by_index:
             data_out = np.empty((len(self.data), self.stats['nt']))
-            for ix_data, key in enumerate(self.datakeys):
+            for ix_data, key in enumerate(self.data.keys()):
                 data_out[ix_data, :] = self.data[key][ix, :]
             return(data_out)
         else:
