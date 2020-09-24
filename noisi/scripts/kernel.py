@@ -20,7 +20,6 @@ from obspy.geodetics import gps2dist_azimuth
 from warnings import warn
 from noisi.util.windows import my_centered
 from noisi.util.geo import geograph_to_geocent
-from noisi.scripts.rotate_kernel import assemble_rotated_kernel
 from noisi.util.corr_pairs import define_correlationpairs, rem_no_obs
 from noisi.scripts.correlation import config_params, get_ns
 try:
@@ -44,14 +43,6 @@ def add_input_files(kp, all_conf, insta=False):
             sta2 = "{}.{}..MX{}".format(*(inf2[0:2] + [chas[1]]))
 
 
-        # basic wave fields are not rotated to Z, R, T
-        # so correct the input file name
-        if all_conf.source_config["rotate_horizontal_components"]:
-            sta1 = re.sub("MXT", "MXE", sta1)
-            sta2 = re.sub("MXT", "MXE", sta2)
-            sta1 = re.sub("MXR", "MXN", sta1)
-            sta2 = re.sub("MXR", "MXN", sta2)
-
         # Wavefield files
         if not insta:
             dir = os.path.join(all_conf.config['project_path'], 'greens')
@@ -66,12 +57,6 @@ def add_input_files(kp, all_conf, insta=False):
         iteration_dir = os.path.join(all_conf.source_config['source_path'],
                                      'iteration_' + str(all_conf.step))
 
-        # go back for adjt source
-        if all_conf.source_config["rotate_horizontal_components"]:
-            sta1 = re.sub("MXE", "MXT", sta1)
-            sta2 = re.sub("MXE", "MXT", sta2)
-            sta1 = re.sub("MXN", "MXR", sta1)
-            sta2 = re.sub("MXN", "MXR", sta2)
         # Adjoint source
         if all_conf.measr_config['mtype'] in ['energy_diff']:
             adj_src_basicnames = [os.path.join(iteration_dir, 'adjt',
@@ -184,17 +169,9 @@ def compute_kernel(input_files, output_file, all_conf, nsrc, all_ns, taper,
         if False in (wf1.sourcegrid[0, -10:] == nsrc.src_loc[0, -10:]):
             raise ValueError("Wave field and source not consistent.")
 
-    kern = np.zeros((nsrc.spect_basis.shape[0],
-                     all_conf.filtcnt, ntraces, len(adjt)))
-    if all_conf.source_config["rotate_horizontal_components"]:
-        tempfile = output_file + ".h5_temp"
-        temp = wf1.copy_setup(tempfile, ntraces=ntraces, nt=n_corr)
-        map_temp_datasets = {0: temp.data}
-        for ix_spec in range(1, nsrc.spect_basis.shape[0]):
-            dtmp = temp.file.create_dataset('data{}'.format(ix_spec),
-                                            temp.data.shape,
-                                            dtype=np.float32)
-            map_temp_datasets[ix_spec] = dtmp
+    kern = np.zeros((nsrc.distr_basis.shape[0], 
+                     all_conf.filtcnt, ntraces, nsrc.spect_basis.shape[0], len(adjt)))
+    
 
     # Loop over locations
     print_each_n = max(5, round(max(ntraces // 3, 1), -1))
@@ -228,8 +205,13 @@ def compute_kernel(input_files, output_file, all_conf, nsrc, all_ns, taper,
 
         else:
             if not wf1.fdomain:
-                s1 = np.ascontiguousarray(wf1.data[i, :] * taper)
-                s2 = np.ascontiguousarray(wf2.data[i, :] * taper)
+                s1 = np.ascontiguousarray(wf1.get_green(i))
+                s2 = np.ascontiguousarray(wf2.get_green(i))
+                assert s1.shape == s2.shape, "Wave fields 1, 2 cannot have\
+different number of source components."
+                for ix_gf in range(s1.shape[0]):
+                    s1[ix_gf, :] *= taper
+                    s2[ix_gf, :] *= taper
                 # if horizontal component rotation: perform it here
                 # more convenient before FFT to avoid additional FFTs
                 spec1 = np.fft.rfft(s1, n)
@@ -241,37 +223,36 @@ def compute_kernel(input_files, output_file, all_conf, nsrc, all_ns, taper,
         g1g2_tr = np.multiply(np.conjugate(spec1), spec2)
         # spectrum
         for ix_spec in range(nsrc.spect_basis.shape[0]):
-            c = np.multiply(g1g2_tr, nsrc.spect_basis[ix_spec, :])
-            ###################################################################
-            # Get Kernel at that location
-            ###################################################################
-            ctemp = np.fft.fftshift(np.fft.irfft(c, n))
-            corr_temp = my_centered(ctemp, n_corr)
-            if all_conf.source_config["rotate_horizontal_components"]:
-                map_temp_datasets[ix_spec][i, :] = corr_temp
+            # all components (z, n, e)
+            for ix_comp in range(spec1.shape[0]):
+                c = np.multiply(g1g2_tr[ix_comp], nsrc.spect_basis[ix_spec, :])
+                ###################################################################
+                # Get Kernel at that location
+                ###################################################################
+                ctemp = np.fft.fftshift(np.fft.irfft(c, n))
+                corr_temp = my_centered(ctemp, n_corr)
+                
+                ###################################################################
+                # Apply the 'adjoint source'
+                ###################################################################
+                for ix_f in range(all_conf.filtcnt):
+                    f = adjt_srcs[ix_f]
 
-            ###################################################################
-            # Apply the 'adjoint source'
-            ###################################################################
-            for ix_f in range(all_conf.filtcnt):
-                f = adjt_srcs[ix_f]
+                    if f is None:
+                        continue
 
-                if f is None:
-                    continue
+                    for j in range(len(f)):
+                        delta = f[j].stats.delta
+                        kern[ix_comp,  ix_f, i, ix_spec, j] = np.dot(corr_temp,
+                                                                     f[j].data) * delta
 
-                for j in range(len(f)):
-                    delta = f[j].stats.delta
-                    kern[ix_spec, ix_f, i, j] = np.dot(corr_temp,
-                                                       f[j].data) * delta * nsrc.surf_area[i]
-
-            if i % print_each_n == 0 and all_conf.config['verbose']:
-                print("Finished {} of {} source locations.".format(i, ntraces))
+                if i % print_each_n == 0 and all_conf.config['verbose']:
+                    print("Finished {} of {} source locations.".format(i, ntraces))
     if not insta:
         wf1.file.close()
         wf2.file.close()
 
-    if all_conf.source_config["rotate_horizontal_components"]:
-        temp.file.close()
+   
     return kern
 
 
@@ -367,46 +348,9 @@ def run_kern(args, comm, size, rank):
                     continue
 
                 for ix_f in range(all_conf.filtcnt):
-                    if not all_conf.source_config["rotate_horizontal_components"]:
-                        if kern[:, ix_f, :, :].sum() != 0:
-                            filename = output_files[i] + '.{}.npy'.format(ix_f)
-                            np.save(filename, kern[:, ix_f, :, :])
-                        else:
-                            continue
-
-            # Rotation
-        if all_conf.source_config["rotate_horizontal_components"]:
-            for kp in kernel_tasks:
-                try:
-                    input_file_list = add_input_files(kp, all_conf)
-                    output_files = add_output_files(kp, all_conf)
-
-                except (IOError, IndexError):
-                    continue
-
-                output_files = [re.sub("MXE", "MXT", of) for of in output_files]            
-                output_files = [re.sub("MXN", "MXR", of) for of in output_files]            
-                # - get all the adjoint sources:
-                # for all channels, all filter bands, both branches
-                adjt_srcs = []
-                for infile in input_file_list:
-                    adjt_srcs.append(open_adjoint_sources(all_conf,
-                                                          infile[2],
-                                                          all_ns[2]))
-                # - open 9 temp files
-                if all_conf.source_config["rotate_horizontal_components"]:
-                    it_dir = os.path.join(all_conf.source_config['project_path'],
-                                          all_conf.source_config['source_name'],
-                                          'iteration_' + str(all_conf.step))
-                    tfname = os.path.join(it_dir, "kern", "*{}*{}*_temp".format(
-                        kp[0].split()[1].strip(), kp[1].split()[1].strip()))
-                    kern_temp_files = glob(tfname)
-                    if kern_temp_files == []:
+                    if kern[:, ix_f, : , :, :].sum() != 0:
+                        filename = output_files[i] + '.{}.npy'.format(ix_f)
+                        np.save(filename, kern[:, ix_f, :, :, :])
+                    else:
                         continue
-
-                    kern_temp_files.sort()
-                    if len(kern_temp_files) == 9:
-                        assemble_rotated_kernel(kern_temp_files, output_files, adjt_srcs,
-                                            os.path.join(all_conf.source_config["project_path"], 
-                                                         "stationlist.csv"))
     return()

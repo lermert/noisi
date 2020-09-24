@@ -228,6 +228,7 @@ precompute_wavefield first.')
     def distribution_from_parameters(self, grd, parameters, verbose=False):
 
         comp = comp_map[parameters['source_component']]
+        parameters["weight"] = float(parameters["weight"])
         if parameters['distribution'] == 'homogeneous':
             if verbose:
                 print('Adding homogeneous distribution')

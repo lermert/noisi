@@ -55,7 +55,7 @@ class NoiseSource(object):
                       self.spect_basis)
 
     def plot(self, **options):
-
+        comp = {0:"E", 1: "N", 2: "Z"}
         # plot the distribution
         for i in range(self.distr_basis.shape[0]):
             for j in range(self.distr_basis.shape[-1]):
@@ -63,7 +63,6 @@ class NoiseSource(object):
                 m = self.distr_basis[i, :, j]
                 if m.sum() == 0:
                     continue
-                comp = {0:"E", 1: "N", 2: "Z"}
                 title = "Source {}-component".format(comp[i])
                 plot_grid(self.src_loc[0], self.src_loc[1], m, title=title, **options)
 

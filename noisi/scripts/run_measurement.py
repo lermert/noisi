@@ -136,7 +136,7 @@ def measurement(source_config, mtype, step, ignore_net,
             continue
 
         # timeseries-like measurements:
-        if mtype in ['square_envelope',
+        if mtype in ['square_envelope', 'envelope',
                      'full_waveform', 'windowed_waveform']:
             l2_so = 0.5 * np.sum(np.power((msr_s - msr_o), 2))
             snr = snratio(tr_o, **options)
@@ -247,7 +247,7 @@ def run_measurement(args, comm, size, rank):
         and len(measr_config['g_speed']) == len(bandpass):
         g_speeds = measr_config['g_speed']
 
-    if measr_config['mtype'] in ['square_envelope']:
+    if measr_config['mtype'] in ['square_envelope', 'envelope']:
         window_params['win_overlap'] = True
 
     hws = window_params['hw'][:]

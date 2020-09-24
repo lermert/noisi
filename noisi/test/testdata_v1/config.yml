@@ -9,6 +9,7 @@ grid_lon_min: -1.0
 grid_lon_max: 1.0
 synt_data: DIS
 wavefield_type: "analytic"
+preload: true
 wavefield_point_force: 1.0e8
 wavefield_path: x
 wavefield_sampling_rate: 1.0

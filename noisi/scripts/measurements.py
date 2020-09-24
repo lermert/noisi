@@ -110,6 +110,17 @@ def log_en_ratio(correlation, g_speed, window_params):
 #     return dphase
 
 
+def envelope(correlation, g_speed, window_params, scaling_factor=1.0):
+    
+    correlation.data *= scaling_factor
+    square_envelope = correlation.data ** 2 + np.imag(hilbert(correlation.data)) ** 2
+    envelope = np.sqrt(square_envelope)
+
+    if window_params['plot']:
+        plot_envelope(correlation, envelope)    
+    return envelope
+
+
 def get_measure_func(mtype):
 
     if mtype == 'ln_energy_ratio':
@@ -118,6 +129,8 @@ def get_measure_func(mtype):
         func = energy
     elif mtype == 'square_envelope':
         func = square_envelope
+    elif mtype == 'envelope':
+        func = envelope
     elif mtype == 'windowed_waveform':
         func = windowed_waveform
     elif mtype == 'full_waveform':

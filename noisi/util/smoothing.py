@@ -79,35 +79,38 @@ def smooth(inputfile, outputfile, coordfile, sigma, cap, thresh, comm, size,
         sigma[ixs] = float(sigma[ixs])
 
     coords = np.load(coordfile)
-    values = np.array(np.load(inputfile), ndmin=2)
-    if values.shape[0] > values.shape[-1]:
-        values = np.transpose(values)
+    values = np.array(np.load(inputfile), ndmin=3)
+    # if values.shape[0] > values.shape[-1]:
+    #     values = np.transpose(values)
+    # shape of kernel:
+    # n_components, n_locations, n_spectra
     smoothed_values = np.zeros(values.shape)
     for i in range(values.shape[0]):
-        array_in = values[i, :]
-        try:
-            sig = sigma[i]
-        except IndexError:
-            sig = sigma[-1]
+        for k in range(values.shape[-1]):
+            array_in = values[i, :, k]
+            try:
+                sig = sigma[i]
+            except IndexError:
+                sig = sigma[-1]
 
-        v = apply_smoothing_sphere(rank, size, array_in,
-                                   coords, sig, cap, threshold=thresh,
-                                   comm=comm)
+            v = apply_smoothing_sphere(rank, size, array_in,
+                                       coords, sig, cap, threshold=thresh,
+                                       comm=comm)
+            comm.barrier()
+
+            if rank == 0:
+                smoothed_values[i, :, k] = v
+
         comm.barrier()
-
-        if rank == 0:
-            smoothed_values[i, :] = v
-
-    comm.barrier()
 
     if outputfile is not None:
         if rank == 0:
-            np.save(outputfile, smoothed_values)
+            np.save(outputfile, smoothed_values / smoothed_values.max() + np.finfo(float).eps)
             return()
         else:
             return()
     else:
-            return(smoothed_values)
+            return(smoothed_values / (smoothed_values.max() + np.finfo(float).eps)
 
 
 if __name__ == '__main__':

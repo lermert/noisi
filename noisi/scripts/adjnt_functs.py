@@ -12,6 +12,36 @@ from noisi.util import windows as wn
 from scipy.signal import hilbert
 
 
+def hilbi(array_in):
+    return np.imag(hilbert(array_in))
+
+
+def envelope(corr_o, corr_s, g_speed, window_params, dorder=1, 
+             previous_perturbation=None, scaling_factor=1.0):
+
+    env_s = np.sqrt(corr_s.data**2 + hilbi(corr_s.data)**2)
+    env_o = np.sqrt(corr_o.data**2 + hilbi(corr_o.data)**2)
+    d_env_1 =  corr_s.data 
+    d_env_2 =  hilbi(corr_s.data)
+    
+    if dorder == 1:
+        u1 = (env_s - env_o) / env_s * d_env_1
+        u2 = hilbi((env_s - env_o) / env_s * d_env_2)
+        adjt_src = u1 - u2
+    
+    elif dorder == 2:
+        d_c1_1 = previous_perturbation
+        d_c1_2 = hilbi(previous_perturbation)
+        a = (env_s - env_o) / env_s
+        b = env_o / env_s**3 * (d_env_1 * d_c1_1 + d_env_2 * d_c1_2)
+
+        adjt_src = a * d_c1_1 - hilbi(a * d_c1_2) +\
+        b * d_env_1 - hilbi(b * d_env_2)
+    success = 1
+
+    return scaling_factor ** 2 * adjt_src, success
+
+
 def log_en_ratio_adj(corr_o, corr_s, g_speed, window_params):
 
     success = False
@@ -101,11 +131,15 @@ def get_adj_func(mtype):
 
     elif mtype == 'windowed_waveform':
         func = windowed_waveform
+
     elif mtype == 'full_waveform':
         func = full_waveform
 
     elif mtype == 'square_envelope':
         func = square_envelope
+
+    elif mtype == 'envelope':
+        func = envelope
 
     else:
         msg = 'Measurement functional %s not currently implemented. \
