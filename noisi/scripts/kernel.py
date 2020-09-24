@@ -217,8 +217,8 @@ different number of source components."
                 spec1 = np.fft.rfft(s1, n)
                 spec2 = np.fft.rfft(s2, n)
             else:
-                spec1 = wf1.data[i, :]
-                spec2 = wf2.data[i, :]
+                spec1 = wf1.get_green(i)
+                spec2 = wf2.get_green(i)
 
         g1g2_tr = np.multiply(np.conjugate(spec1), spec2)
         # spectrum
@@ -229,7 +229,7 @@ different number of source components."
                 ###################################################################
                 # Get Kernel at that location
                 ###################################################################
-                ctemp = np.fft.fftshift(np.fft.irfft(c, n))
+                ctemp = np.fft.fftshift(np.fft.irfft(c, n), axes=-1)
                 corr_temp = my_centered(ctemp, n_corr)
                 
                 ###################################################################

@@ -31,10 +31,10 @@ class NoiseSource(object):
             # Presumably, these arrays are small and will be used very often
             # --> good to have in memory.
             self.distr_basis = np.array(self.model['model'][:], ndmin=3)
-            self.spect_basis = self.model['spectral_basis'][:]
+            self.spect_basis = np.array(self.model['spectral_basis'][:])
 
             # The surface area of each grid element
-            self.surf_area = self.model['surface_areas'][:]
+            self.surf_area = np.array(self.model['surface_areas'][:])
 
         except IOError:
             msg = 'Unable to open model file %r.' % model

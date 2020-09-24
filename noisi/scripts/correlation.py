@@ -301,7 +301,6 @@ different number of source components."
 
         # convolve G1G2
         g1g2_tr = np.multiply(np.conjugate(spec1), spec2)
-
         # convolve noise source
         c = np.multiply(g1g2_tr, S)
         # sum up contribution of sources components (z, n, e) to this component
