@@ -306,7 +306,7 @@ different number of source components."
         # sum up contribution of sources components (z, n, e) to this component
         c = np.sum(c, axis=0)
         # transform back
-        correlation += my_centered(np.fft.fftshift(np.fft.irfft(c, n)),
+        correlation += my_centered(np.fft.fftshift(np.fft.irfft(c, n), axes=-1),
                                    n_corr) * nsrc.surf_area[i]
         # occasional info
         if i % print_each_n == 0 and all_conf.config['verbose']:

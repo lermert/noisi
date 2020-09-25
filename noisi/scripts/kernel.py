@@ -181,51 +181,51 @@ def compute_kernel(input_files, output_file, all_conf, nsrc, all_ns, taper,
         # For the kernel, this contains only the basis functions of the
         # spectrum without weights; might still be location-dependent,
         # for example when constraining sensivity to ocean
-        S = nsrc.get_spect(i)
+        # S = nsrc.get_spect(i)
 
-        if S.sum() == 0.:
+        #if S.sum() == 0.:
             # The spectrum has 0 phase so only checking
             # absolute value here
-            continue
-        if insta:
-            # get source locations
-            lat_src = geograph_to_geocent(nsrc.src_loc[1, i])
-            lon_src = nsrc.src_loc[0, i]
-            fsrc = instaseis.ForceSource(latitude=lat_src,
-                                         longitude=lon_src, f_r=1.e12)
-            dt = 1. / all_conf.source_config['sampling_rate']
-            s1 = db.get_seismograms(source=fsrc, receiver=rec1,
-                                    dt=dt)[0].data * taper
-            s1 = np.ascontiguousarray(s1)
-            s2 = db.get_seismograms(source=fsrc, receiver=rec2,
-                                    dt=dt)[0].data * taper
-            s2 = np.ascontiguousarray(s2)
+        #    continue
+        # if insta:
+        #     # get source locations
+        #     lat_src = geograph_to_geocent(nsrc.src_loc[1, i])
+        #     lon_src = nsrc.src_loc[0, i]
+        #     fsrc = instaseis.ForceSource(latitude=lat_src,
+        #                                  longitude=lon_src, f_r=1.e12)
+        #     dt = 1. / all_conf.source_config['sampling_rate']
+        #     s1 = db.get_seismograms(source=fsrc, receiver=rec1,
+        #                             dt=dt)[0].data * taper
+        #     s1 = np.ascontiguousarray(s1)
+        #     s2 = db.get_seismograms(source=fsrc, receiver=rec2,
+        #                             dt=dt)[0].data * taper
+        #     s2 = np.ascontiguousarray(s2)
+        #     spec1 = np.fft.rfft(s1, n)
+        #     spec2 = np.fft.rfft(s2, n)
+
+        # else:
+        if not wf1.fdomain:
+            s1 = np.ascontiguousarray(wf1.get_green(i))
+            s2 = np.ascontiguousarray(wf2.get_green(i))
+            assert s1.shape == s2.shape, "Wave fields 1, 2 cannot have\
+different number of source components."
+            for ix_gf in range(s1.shape[0]):
+                s1[ix_gf, :] *= taper
+                s2[ix_gf, :] *= taper
+            # if horizontal component rotation: perform it here
+            # more convenient before FFT to avoid additional FFTs
             spec1 = np.fft.rfft(s1, n)
             spec2 = np.fft.rfft(s2, n)
-
         else:
-            if not wf1.fdomain:
-                s1 = np.ascontiguousarray(wf1.get_green(i))
-                s2 = np.ascontiguousarray(wf2.get_green(i))
-                assert s1.shape == s2.shape, "Wave fields 1, 2 cannot have\
-different number of source components."
-                for ix_gf in range(s1.shape[0]):
-                    s1[ix_gf, :] *= taper
-                    s2[ix_gf, :] *= taper
-                # if horizontal component rotation: perform it here
-                # more convenient before FFT to avoid additional FFTs
-                spec1 = np.fft.rfft(s1, n)
-                spec2 = np.fft.rfft(s2, n)
-            else:
-                spec1 = wf1.get_green(i)
-                spec2 = wf2.get_green(i)
+            spec1 = wf1.get_green(i)
+            spec2 = wf2.get_green(i)
 
         g1g2_tr = np.multiply(np.conjugate(spec1), spec2)
         # spectrum
         for ix_spec in range(nsrc.spect_basis.shape[0]):
             # all components (z, n, e)
             for ix_comp in range(spec1.shape[0]):
-                c = np.multiply(g1g2_tr[ix_comp], nsrc.spect_basis[ix_spec, :])
+                c = np.multiply(g1g2_tr[ix_comp, :], nsrc.spect_basis[ix_spec, :])
                 ###################################################################
                 # Get Kernel at that location
                 ###################################################################
