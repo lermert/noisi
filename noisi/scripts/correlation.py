@@ -274,12 +274,17 @@ def compute_correlation(input_files, all_conf, nsrc, all_ns, taper,
             s2 = np.ascontiguousarray(wf2.get_green(i))
             assert s1.shape == s2.shape, "Wave fields 1, 2 cannot have\
 different number of source components."
-            for ix_gf in range(s1.shape[0]):
-                s1[ix_gf, :] *= taper
-                s2[ix_gf, :] *= taper
+            spec1 = np.zeros(S.shape, dtype=np.complex128)
+            spec2 = np.zeros(S.shape, dtype=np.complex128)
 
-            spec1 = np.fft.rfft(s1, n)
-            spec2 = np.fft.rfft(s2, n)
+            for ix_gf in range(s1.shape[0]):
+                #s1[ix_gf, :] *= taper
+                #s2[ix_gf, :] *= taper
+                spec1[ix_gf, :] = np.fft.rfft(s1[ix_gf, :] * taper, n)
+                spec2[ix_gf, :] = np.fft.rfft(s2[ix_gf, :] * taper, n)
+                           
+            ##spec1 = np.fft.rfft(s1, n)
+            #spec2 = np.fft.rfft(s2, n)
         else:
             spec1 = np.zeros((3, ntime))
             spec2 = np.zeros((3, ntime))
@@ -311,6 +316,10 @@ different number of source components."
         # occasional info
         if i % print_each_n == 0 and all_conf.config['verbose']:
             print("Finished {} of {} source locations.".format(i, ntraces))
+            print(S[0, 100:120])
+            print(spec1[0, 100:120])
+            print(g1g2_tr[0, 100:120])
+            print(correlation[100:120])
 # end of loop over all source locations #######################################
     return(correlation, station1, station2)
 

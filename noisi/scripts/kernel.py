@@ -248,6 +248,10 @@ different number of source components."
 
                 if i % print_each_n == 0 and all_conf.config['verbose']:
                     print("Finished {} of {} source locations.".format(i, ntraces))
+                    print(g1g2_tr[0, 100:120])
+                    print(spec1[0, 100:120])
+                    print(ctemp[100:120])
+
     if not insta:
         wf1.file.close()
         wf2.file.close()
