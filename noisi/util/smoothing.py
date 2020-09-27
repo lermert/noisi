@@ -105,12 +105,12 @@ def smooth(inputfile, outputfile, coordfile, sigma, cap, thresh, comm, size,
 
     if outputfile is not None:
         if rank == 0:
-            np.save(outputfile, smoothed_values / smoothed_values.max() + np.finfo(float).eps)
+            np.save(outputfile, smoothed_values / (smoothed_values.max() + np.finfo(smoothed_values.min()).eps))
             return()
         else:
             return()
     else:
-            return(smoothed_values / (smoothed_values.max() + np.finfo(float).eps)
+            return(smoothed_values / (smoothed_values.max() + np.finfo(smoothed_values.min()).eps))
 
 
 if __name__ == '__main__':
@@ -122,7 +122,6 @@ if __name__ == '__main__':
     coordfile = sys.argv[3]
     sigma = sys.argv[4].split(',')
     cap = float(sys.argv[5])
-
     try:
         thresh = float(sys.argv[6])
     except IndexError:

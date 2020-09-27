@@ -139,39 +139,48 @@ def compute_kernel(input_files, output_file, all_conf, nsrc, all_ns, taper,
             print("========================================")
             print("Computing: " + output_file)
     # Uniform spatial weights. (current model is in the adjoint source)
-    nsrc.distr_basis = np.ones(nsrc.distr_basis.shape)
+    #nsrc.distr_basis = np.ones(nsrc.distr_basis.shape)
     ntraces = nsrc.src_loc[0].shape[0]
     # [comp1, comp2] = [wf1, wf2] # keep these strings in case need to be rotated
 
-    if insta:
-        # open database
-        dbpath = all_conf.config['wavefield_path']
-        # open and determine Fs, nt
-        db = instaseis.open_db(dbpath)
-        # get receiver locations
-        lat1 = geograph_to_geocent(float(wf1[2]))
-        lon1 = float(wf1[3])
-        rec1 = instaseis.Receiver(latitude=lat1, longitude=lon1)
-        lat2 = geograph_to_geocent(float(wf2[2]))
-        lon2 = float(wf2[3])
-        rec2 = instaseis.Receiver(latitude=lat2, longitude=lon2)
+    # if insta:
+    #     # open database
+    #     dbpath = all_conf.config['wavefield_path']
+    #     # open and determine Fs, nt
+    #     db = instaseis.open_db(dbpath)
+    #     # get receiver locations
+    #     lat1 = geograph_to_geocent(float(wf1[2]))
+    #     lon1 = float(wf1[3])
+    #     rec1 = instaseis.Receiver(latitude=lat1, longitude=lon1)
+    #     lat2 = geograph_to_geocent(float(wf2[2]))
+    #     lon2 = float(wf2[3])
+    #     rec2 = instaseis.Receiver(latitude=lat2, longitude=lon2)
 
-    else:
-        wf1 = WaveField(wf1)
-        wf2 = WaveField(wf2)
-        # Make sure all is consistent
-        if False in (wf1.sourcegrid[1, 0:10] == wf2.sourcegrid[1, 0:10]):
-            raise ValueError("Wave fields not consistent.")
+    # else:
+    wf1 = WaveField(wf1, preload=all_conf.config["preload"])
+    wf2 = WaveField(wf2, preload=all_conf.config["preload"])
+    # Make sure all is consistent
+    if False in (wf1.sourcegrid[1, 0:10] == wf2.sourcegrid[1, 0:10]):
+        raise ValueError("Wave fields not consistent.")
 
-        if False in (wf1.sourcegrid[1, -10:] == wf2.sourcegrid[1, -10:]):
-            raise ValueError("Wave fields not consistent.")
+    if False in (wf1.sourcegrid[1, -10:] == wf2.sourcegrid[1, -10:]):
+        raise ValueError("Wave fields not consistent.")
 
-        if False in (wf1.sourcegrid[0, -10:] == nsrc.src_loc[0, -10:]):
-            raise ValueError("Wave field and source not consistent.")
+    if False in (wf1.sourcegrid[0, -10:] == nsrc.src_loc[0, -10:]):
+        raise ValueError("Wave field and source not consistent.")
 
     kern = np.zeros((nsrc.distr_basis.shape[0], 
-                     all_conf.filtcnt, ntraces, nsrc.spect_basis.shape[0], len(adjt)))
-    
+                     all_conf.filtcnt, ntraces, nsrc.spect_basis.shape[0], len(adjt_srcs[0])))
+    # check which basis functions must be skipped because their coefficients are 0:
+    # n_comp = nsrc.distr_basis.shape[0]
+    # n_basis = nsrc.distr_basis.shape[-1]
+    # kernel_defined = np.zeros((n_comp, n_basis))
+    # for ix_comp in range(n_comp):
+    #     for ix_spec in range(n_basis):
+    #         if nsrc.distr_basis[ix_comp, :, ix_spec].sum() != 0.0:
+    #             kernel_defined[ix_comp, ix_spec] = 1.
+    # print(kernel_defined)
+
 
     # Loop over locations
     print_each_n = max(5, round(max(ntraces // 3, 1), -1))
@@ -181,12 +190,12 @@ def compute_kernel(input_files, output_file, all_conf, nsrc, all_ns, taper,
         # For the kernel, this contains only the basis functions of the
         # spectrum without weights; might still be location-dependent,
         # for example when constraining sensivity to ocean
-        # S = nsrc.get_spect(i)
+        S = nsrc.get_spect(i)
 
-        #if S.sum() == 0.:
-            # The spectrum has 0 phase so only checking
-            # absolute value here
-        #    continue
+        if S.sum() == 0.:
+            #The spectrum has 0 phase so only checking
+            #absolute value here
+           continue
         # if insta:
         #     # get source locations
         #     lat_src = geograph_to_geocent(nsrc.src_loc[1, i])
@@ -222,22 +231,24 @@ different number of source components."
 
         g1g2_tr = np.multiply(np.conjugate(spec1), spec2)
         # spectrum
-        for ix_spec in range(nsrc.spect_basis.shape[0]):
-            # all components (z, n, e)
-            for ix_comp in range(spec1.shape[0]):
+        # all components (z, n, e)
+        for ix_comp in range(spec1.shape[0]):
+
+            for ix_spec in range(nsrc.spect_basis.shape[0]):
                 c = np.multiply(g1g2_tr[ix_comp, :], nsrc.spect_basis[ix_spec, :])
                 ###################################################################
                 # Get Kernel at that location
                 ###################################################################
-                ctemp = np.fft.fftshift(np.fft.irfft(c, n), axes=-1)
-                corr_temp = my_centered(ctemp, n_corr)
+                
+                corr_temp = my_centered(np.fft.fftshift(np.fft.irfft(c, n), axes=-1),
+                                        n_corr)
                 
                 ###################################################################
                 # Apply the 'adjoint source'
                 ###################################################################
                 for ix_f in range(all_conf.filtcnt):
                     f = adjt_srcs[ix_f]
-
+                    
                     if f is None:
                         continue
 
@@ -248,11 +259,8 @@ different number of source components."
 
                 if i % print_each_n == 0 and all_conf.config['verbose']:
                     print("Finished {} of {} source locations.".format(i, ntraces))
-                    print(g1g2_tr[0, 100:120])
-                    print(spec1[0, 100:120])
-                    print(ctemp[100:120])
 
-    if not insta:
+    if not insta:   
         wf1.file.close()
         wf2.file.close()
 

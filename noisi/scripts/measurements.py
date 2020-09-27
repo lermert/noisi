@@ -12,73 +12,101 @@ from noisi.util.windows import get_window
 from math import log
 
 
-def square_envelope(correlation, g_speed, window_params):
+def square_envelope(corr_o, corr_s, g_speed, window_params):
+    if corr_o.data.max() != 0:
+        a = abs(corr_o.data.max())
+        corr_s.data /= a
+        corr_o.data /= a
 
-    square_envelope = correlation.data**2 + \
-        np.imag(hilbert(correlation.data))**2
-    if window_params['plot']:
-        plot_window(correlation, square_envelope, 'N/A')
+    se_o = corr_o.data ** 2 + np.imag(hilbert(corr_o.data)) ** 2
+    se_s = corr_s.data ** 2 + np.imag(hilbert(corr_s.data)) ** 2
 
-    return square_envelope
+    return 0.5 * np.sum(corr_o.stats.delta * (se_s - se_o) ** 2)
 
 
-def windowed_waveform(correlation, g_speed, window_params):
-    window = get_window(correlation.stats, g_speed, window_params)
+def windowed_waveform(corr_o, corr_s, g_speed, window_params):
+    window = get_window(corr_o.stats, g_speed, window_params)
     win = window[0]
     if window[2]:
-        win_caus = (correlation.data * win)
-        win_acaus = (correlation.data * win[::-1])
-        msr = win_caus + win_acaus
+        if corr_o.data.max() != 0:
+            a = abs(corr_o.data.max())
+            corr_s.data /= a
+            corr_o.data /= a
+        win_caus = (corr_o.data * win)
+        win_acaus = (corr_o.data * win[::-1])
+        msr_o = win_caus + win_acaus
+        
+        win_caus_s = (corr_s.data * win)
+        win_acaus_s = (corr_s.data * win[::-1])
+        msr_s = win_caus_s + win_acaus_s
     else:
-        msr = win - win + np.nan
-    return msr
+        msr_o = win - win + np.nan
+        msr_s = win - win + np.nan
+
+    return 0.5 * np.sum(corr_o.stats.delta * np.power((msr_s - msr_o), 2))
 
 
-def full_waveform(correlation, **kwargs):
-    return(correlation.data)
+def full_waveform(corr_o, corr_s, **kwargs):
+    
+    if corr_o.data.max() != 0:
+        a = abs(corr_o.data.max())
+        corr_s.data /= a
+        corr_o.data /= a
+
+    return 0.5 * np.sum(corr_o.stats.delta * np.power((corr_s.data - corr_o.data), 2))
 
 
-def energy(correlation, g_speed, window_params):
+def energy(corr_o, corr_s, g_speed, window_params):
 
-    window = get_window(correlation.stats, g_speed, window_params)
+    window = get_window(corr_o.stats, g_speed, window_params)
     msr = [np.nan, np.nan]
     win = window[0]
 
     if window[2]:
+        if corr_o.data.max() != 0:
+            a = abs(corr_o.data.max())
+            corr_s.data /= a
+            corr_o.data /= a
         # causal
-        E = np.trapz((correlation.data * win)**2)
-        msr[0] = E
-        if window_params['plot']:
-            plot_window(correlation, win, E)
+        E_o = np.trapz(corr_o.stats.delta * (corr_o.data * win)**2)
+        E_s = np.trapz(corr_o.stats.delta * (corr_s.data * win)**2)
+        msr[0] = 0.5 * (E_s - E_o) ** 2
 
         # acausal
         win = win[::-1]
-        E = np.trapz((correlation.data * win)**2)
-        msr[1] = E
-        if window_params['plot']:
-            plot_window(correlation, win, E)
+        E_o = np.trapz(corr_o.stats.delta * (corr_o.data * win)**2)
+        E_s = np.trapz(corr_o.stats.delta * (corr_s.data * win)**2)
+        
+        msr[1] = 0.5 * (E_s - E_o) ** 2
+       
 
     return np.array(msr)
 
 
-def log_en_ratio(correlation, g_speed, window_params):
-    delta = correlation.stats.delta
-    window = get_window(correlation.stats, g_speed, window_params)
+def log_en_ratio(corr_o, corr_s, g_speed, window_params):
+    delta = corr_o.stats.delta
+    window = get_window(corr_o.stats, g_speed, window_params)
     win = window[0]
 
     if window[2]:
 
-        sig_c = correlation.data * win
-        sig_a = correlation.data * win[::-1]
+        # data
+        sig_c = corr_o.data * win
+        sig_a = corr_o.data * win[::-1]
         E_plus = np.trapz(np.power(sig_c, 2)) * delta
         E_minus = np.trapz(np.power(sig_a, 2)) * delta
-        msr = log(E_plus / (E_minus + np.finfo(E_minus).tiny))
+        msr_o = log(E_plus / (E_minus))# + np.finfo(E_minus).tiny))
+        # synthetic
+        sig_c = corr_s.data * win
+        sig_a = corr_s.data * win[::-1]
+        E_plus = np.trapz(np.power(sig_c, 2)) * delta
+        E_minus = np.trapz(np.power(sig_a, 2)) * delta
+        msr_s = log(E_plus / (E_minus))# + np.finfo(E_minus).tiny))
 
-        if window_params['plot']:
-            plot_window(correlation, win, msr)
     else:
-        msr = np.nan
-    return msr
+        msr_o = np.nan
+        msr_s = np.nan
+    return 0.5 * (msr_s - msr_o) ** 2
 
 
 # This is a bit problematic cause here the misfit already needs
@@ -110,15 +138,18 @@ def log_en_ratio(correlation, g_speed, window_params):
 #     return dphase
 
 
-def envelope(correlation, g_speed, window_params, scaling_factor=1.0):
-    
-    correlation.data *= scaling_factor
-    square_envelope = correlation.data ** 2 + np.imag(hilbert(correlation.data)) ** 2
-    envelope = np.sqrt(square_envelope)
+def envelope(corr_o, corr_s, g_speed, window_params):
+    if corr_o.data.max() != 0:
+        a = abs(corr_o.data.max())
+        corr_s.data /= a
+        corr_o.data /= a
 
-    if window_params['plot']:
-        plot_envelope(correlation, envelope)    
-    return envelope
+    se_o = corr_o.data ** 2 + np.imag(hilbert(corr_o.data)) ** 2
+    en_o = np.sqrt(se_o)
+    se_s = corr_s.data ** 2 + np.imag(hilbert(corr_s.data)) ** 2
+    en_s = np.sqrt(se_s)
+
+    return 0.5 * np.sum(corr_o.stats.delta * (en_s - en_o) ** 2)
 
 
 def get_measure_func(mtype):

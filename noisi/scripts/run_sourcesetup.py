@@ -216,7 +216,11 @@ precompute_wavefield first.')
         # Save to an hdf5 file
         with h5py.File(os.path.join(args.source_model,
                                     'spectral_model.h5'), 'w') as fh:
-            uniform_spatial = np.ones(coeffs.shape) * 1.0
+            uniform_spatial = np.zeros(coeffs.shape)
+            for ix_comp in range(coeffs.shape[0]):
+                for ix_spec in range(coeffs.shape[-1]):
+                    if coeffs[ix_comp, :, ix_spec].sum() != 0.0:
+                        uniform_spatial[ix_comp, :, ix_spec] = 1.
             fh.create_dataset('coordinates', data=grd)
             fh.create_dataset('frequencies', data=freq)
             fh.create_dataset('model', data=uniform_spatial.astype(np.float))

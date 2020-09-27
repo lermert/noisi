@@ -235,7 +235,6 @@ def compute_correlation(input_files, all_conf, nsrc, all_ns, taper,
     """
 
     wf1, wf2 = input_files
-    print(wf1)
     ntime, n, n_corr, Fs = all_ns
     ntraces = nsrc.src_loc[0].shape[0]
     correlation = np.zeros(n_corr)
@@ -243,7 +242,6 @@ def compute_correlation(input_files, all_conf, nsrc, all_ns, taper,
 
     wf1 = WaveField(wf1, preload=all_conf.config["preload"])
     wf2 = WaveField(wf2, preload=all_conf.config["preload"])
-
 
     station1 = wf1.stats['reference_station']
     station2 = wf2.stats['reference_station']
@@ -274,17 +272,17 @@ def compute_correlation(input_files, all_conf, nsrc, all_ns, taper,
             s2 = np.ascontiguousarray(wf2.get_green(i))
             assert s1.shape == s2.shape, "Wave fields 1, 2 cannot have\
 different number of source components."
-            spec1 = np.zeros(S.shape, dtype=np.complex128)
-            spec2 = np.zeros(S.shape, dtype=np.complex128)
+            #spec1 = np.zeros(S.shape, dtype=np.complex128)
+            #spec2 = np.zeros(S.shape, dtype=np.complex128)
 
             for ix_gf in range(s1.shape[0]):
-                #s1[ix_gf, :] *= taper
-                #s2[ix_gf, :] *= taper
-                spec1[ix_gf, :] = np.fft.rfft(s1[ix_gf, :] * taper, n)
-                spec2[ix_gf, :] = np.fft.rfft(s2[ix_gf, :] * taper, n)
+                s1[ix_gf, :] *= taper
+                s2[ix_gf, :] *= taper
+                #spec1[ix_gf, :] = np.fft.rfft(s1[ix_gf, :], n)
+                #spec2[ix_gf, :] = np.fft.rfft(s2[ix_gf, :], n)
                            
-            ##spec1 = np.fft.rfft(s1, n)
-            #spec2 = np.fft.rfft(s2, n)
+            spec1 = np.fft.rfft(s1, n)
+            spec2 = np.fft.rfft(s2, n)
         else:
             spec1 = np.zeros((3, ntime))
             spec2 = np.zeros((3, ntime))
@@ -316,10 +314,7 @@ different number of source components."
         # occasional info
         if i % print_each_n == 0 and all_conf.config['verbose']:
             print("Finished {} of {} source locations.".format(i, ntraces))
-            print(S[0, 100:120])
-            print(spec1[0, 100:120])
-            print(g1g2_tr[0, 100:120])
-            print(correlation[100:120])
+            
 # end of loop over all source locations #######################################
     return(correlation, station1, station2)
 
@@ -372,7 +367,7 @@ def run_corr(args, comm, size, rank):
 
     # use a one-sided taper: The seismogram probably has a non-zero end,
     # being cut off wherever the solver stopped running.
-    taper = cosine_taper(all_ns[0], p=0.05)
+    taper = cosine_taper(all_ns[0], p=0.01)
     taper[0: all_ns[0] // 2] = 1.0
 
     with NoiseSource(nsrc) as nsrc:

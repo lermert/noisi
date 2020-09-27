@@ -99,7 +99,6 @@ def measurement(source_config, mtype, step, ignore_net,
             continue
 
         # Assigning stats to synthetics, cutting them to right length
-
         tr_s.stats.sac = tr_o.stats.sac.copy()
         tr_s.data = my_centered(tr_s.data, tr_o.stats.npts)
         # Get all the necessary information
@@ -126,52 +125,95 @@ def measurement(source_config, mtype, step, ignore_net,
 
         # Take the measurement
         func = rm.get_measure_func(mtype)
-        msr_o = func(tr_o, **options)
-        msr_s = func(tr_s, **options)
+        tr_o_m = tr_o.copy()
+        tr_s_m = tr_s.copy()
+        msr = func(tr_o_m, tr_s_m, **options)
 
         # Get the adjoint source
         adjt_func = am.get_adj_func(mtype)
-        adjt, success = adjt_func(tr_o, tr_s, **options)
+        tr_o_m = tr_o.copy()
+        tr_s_m = tr_s.copy()
+        adjt, success = adjt_func(tr_o_m, tr_s_m, **options)
         if not success:
             continue
 
-        # timeseries-like measurements:
-        if mtype in ['square_envelope', 'envelope',
-                     'full_waveform', 'windowed_waveform']:
-            l2_so = 0.5 * np.sum(np.power((msr_s - msr_o), 2))
+        if mtype in ["square_envelope", "full_waveform", "windowed_waveform",
+                     "ln_energy_ratio", "envelope"]:
             snr = snratio(tr_o, **options)
             snr_a = snratio(tr_o, **_options_ac)
             info.extend([np.nan, np.nan, np.nan, np.nan,
-                         l2_so, snr, snr_a, tr_o.stats.sac.user0])
+                         msr, snr, snr_a, tr_o.stats.sac.user0])
             adjoint_source[0].data = adjt
 
+        elif mtype == "energy_diff":
+            snr = snratio(tr_o, **options)
+            snr_a = snratio(tr_o, **_options_ac)
+            info.extend([np.nan, np.nan, msr[0], msr[1],
+                         msr.sum(), snr, snr_a, tr_o.stats.sac.user0])
+            adjoint_source += adjoint_source[0].copy()
+            for ix_branch in range(2):
+                adjoint_source[ix_branch].data = adjt[ix_branch]
+
+        # # normalization through max of data
+        # a = tr_o.data.max()
+        # if mtype == "full_waveform" or mtype == "windowed_waveform":
+        #     l2_so = 0.5 * np.sum(np.power((msr_s - msr_o), 2))
+        #     snr = snratio(tr_o, **options)
+        #     snr_a = snratio(tr_o, **_options_ac)
+        #     info.extend([np.nan, np.nan, np.nan, np.nan,
+        #                  l2_so, snr, snr_a, tr_o.stats.sac.user0])
+        #     adjoint_source[0].data = adjt
+
+        # elif mtype == "energy_diff":
+        #     l2_so = 0.5 * (msr_s / a ** 2 - msr_o / a ** 2)**2
+        #     msr = msr_o[0]
+        #     msr_a = msr_o[1]
+        #     snr = snratio(tr_o, **options)
+        #     snr_a = snratio(tr_o, **_options_ac)
+        #     l2 = l2_so.sum()
+        #     info.extend([msr_s[0], msr_s[1], msr, msr_a,
+        #                  l2, snr, snr_a, tr_o.stats.sac.user0])
+
+        #     adjoint_source += adjoint_source[0].copy()
+        #     for ix_branch in range(2):
+        #         adjoint_source[ix_branch].data = adjt[ix_branch] / a ** 2
+        #         adjoint_source[ix_branch].data *= (msr_s[ix_branch] -
+        #                                            msr_o[ix_branch])
+        # elif mtype in ['square_envelope', 'envelope']:
+        #     l2_so = 0.5 * np.sum(np.power((msr_s - msr_o), 2))
+        #     snr = snratio(tr_o, **options)
+        #     snr_a = snratio(tr_o, **_options_ac)
+        #     info.extend([np.nan, np.nan, np.nan, np.nan,
+        #                  l2_so, snr, snr_a, tr_o.stats.sac.user0])
+        #     adjoint_source[0].data = adjt
+
         # single value measurements:
-        else:
-            if mtype == 'energy_diff':
-                l2_so = 0.5 * (msr_s - msr_o)**2 / (msr_o) ** 2
-                msr = msr_o[0]
-                msr_a = msr_o[1]
-                snr = snratio(tr_o, **options)
-                snr_a = snratio(tr_o, **_options_ac)
-                l2 = l2_so.sum()
-                info.extend([msr_s[0], msr_s[1], msr, msr_a,
-                             l2, snr, snr_a, tr_o.stats.sac.user0])
+        # else:
+        #     if mtype == 'energy_diff':
+        #         l2_so = 0.5 * (msr_s - msr_o)**2
+        #         msr = msr_o[0]
+        #         msr_a = msr_o[1]
+        #         snr = snratio(tr_o, **options)
+        #         snr_a = snratio(tr_o, **_options_ac)
+        #         l2 = l2_so.sum()
+        #         info.extend([msr_s[0], msr_s[1], msr, msr_a,
+        #                      l2, snr, snr_a, tr_o.stats.sac.user0])
 
-                adjoint_source += adjoint_source[0].copy()
-                for ix_branch in range(2):
-                    adjoint_source[ix_branch].data = adjt[ix_branch]
-                    adjoint_source[ix_branch].data *= (msr_s[ix_branch] -
-                                                       msr_o[ix_branch]) / msr_o[ix_branch] ** 2
+        #         adjoint_source += adjoint_source[0].copy()
+        #         for ix_branch in range(2):
+        #             adjoint_source[ix_branch].data = adjt[ix_branch]
+        #             #adjoint_source[ix_branch].data *= (msr_s[ix_branch] -
+        #             #                                   msr_o[ix_branch])
 
-            elif mtype == 'ln_energy_ratio':
-                l2_so = 0.5 * (msr_s - msr_o)**2
-                msr = msr_o
-                snr = snratio(tr_o, **options)
-                snr_a = snratio(tr_o, **_options_ac)
-                info.extend([msr_s, np.nan, msr, np.nan,
-                             l2_so, snr, snr_a, tr_o.stats.sac.user0])
-                adjt *= (msr_s - msr_o)
-                adjoint_source[0].data = adjt
+        #     elif mtype == 'ln_energy_ratio':
+        #         l2_so = 0.5 * (msr_s - msr_o)**2
+        #         msr = msr_o
+        #         snr = snratio(tr_o, **options)
+        #         snr_a = snratio(tr_o, **_options_ac)
+        #         info.extend([msr_s, np.nan, msr, np.nan,
+        #                      l2_so, snr, snr_a, tr_o.stats.sac.user0])
+        #         adjt *= (msr_s - msr_o)
+        #         adjoint_source[0].data = adjt
 
         measurements.loc[i] = info
 
