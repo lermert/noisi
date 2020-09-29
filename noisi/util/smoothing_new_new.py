@@ -257,14 +257,13 @@ def smooth_gaussian(values, coords, rank, size, sigma, ellipsoid):
         else:
             dist = chord_length(coords[1, j], coords[0, j], 
                                        coords[1], coords[0])
-        print(dist[1:10], sigma)
+
         weight = a * np.exp(-(dist) ** 2 / (2 * sigma ** 2))
 
         for i in range(values.shape[0]):
             for k in range(values.shape[-1]):
                 if j % 100 == 0:
-                    print(rank, i, j, k)
-                v_smooth[i, j, k] = np.sum(np.multiply(weight, values[i, j, k])) / len(values[j])
+                v_smooth[i, j, k] = np.sum(np.multiply(weight, values[i, :, k])) / coords.shape[-1]
 
     
     return(v_smooth)
@@ -272,7 +271,7 @@ def smooth_gaussian(values, coords, rank, size, sigma, ellipsoid):
 
 def apply_smoothing_sphere(rank, size, values, coords, sigma, cap,
                            threshold, comm,
-                           ellipsoid=True):
+                           ellipsoid=False):
 
     sigma = float(sigma)
     cap = float(cap)
