@@ -262,7 +262,6 @@ def smooth_gaussian(values, coords, rank, size, sigma, ellipsoid):
 
         for i in range(values.shape[0]):
             for k in range(values.shape[-1]):
-                if j % 100 == 0:
                 v_smooth[i, j, k] = np.sum(np.multiply(weight, values[i, :, k])) / coords.shape[-1]
 
     

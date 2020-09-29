@@ -36,7 +36,7 @@ def get_station_info(stats):
     return([sta1, sta2, lat1, lon1, lat2, lon2, dist, az, baz])
 
 
-def measurement(source_config, mtype, step, ignore_net,
+def measurement(rank, size, source_config, mtype, step, ignore_net,
                 ix_bandpass, bandpass, step_test, taper_perc, **options):
 
     """
@@ -56,6 +56,7 @@ def measurement(source_config, mtype, step, ignore_net,
                                 'observed_correlations')
 
     files = [f for f in os.listdir(corr_dir)]
+    files = files[rank::size]
     files = [os.path.join(corr_dir, f) for f in files]
     synth_dir = os.path.join(step_dir, 'corr')
 
@@ -153,68 +154,6 @@ def measurement(source_config, mtype, step, ignore_net,
             adjoint_source += adjoint_source[0].copy()
             for ix_branch in range(2):
                 adjoint_source[ix_branch].data = adjt[ix_branch]
-
-        # # normalization through max of data
-        # a = tr_o.data.max()
-        # if mtype == "full_waveform" or mtype == "windowed_waveform":
-        #     l2_so = 0.5 * np.sum(np.power((msr_s - msr_o), 2))
-        #     snr = snratio(tr_o, **options)
-        #     snr_a = snratio(tr_o, **_options_ac)
-        #     info.extend([np.nan, np.nan, np.nan, np.nan,
-        #                  l2_so, snr, snr_a, tr_o.stats.sac.user0])
-        #     adjoint_source[0].data = adjt
-
-        # elif mtype == "energy_diff":
-        #     l2_so = 0.5 * (msr_s / a ** 2 - msr_o / a ** 2)**2
-        #     msr = msr_o[0]
-        #     msr_a = msr_o[1]
-        #     snr = snratio(tr_o, **options)
-        #     snr_a = snratio(tr_o, **_options_ac)
-        #     l2 = l2_so.sum()
-        #     info.extend([msr_s[0], msr_s[1], msr, msr_a,
-        #                  l2, snr, snr_a, tr_o.stats.sac.user0])
-
-        #     adjoint_source += adjoint_source[0].copy()
-        #     for ix_branch in range(2):
-        #         adjoint_source[ix_branch].data = adjt[ix_branch] / a ** 2
-        #         adjoint_source[ix_branch].data *= (msr_s[ix_branch] -
-        #                                            msr_o[ix_branch])
-        # elif mtype in ['square_envelope', 'envelope']:
-        #     l2_so = 0.5 * np.sum(np.power((msr_s - msr_o), 2))
-        #     snr = snratio(tr_o, **options)
-        #     snr_a = snratio(tr_o, **_options_ac)
-        #     info.extend([np.nan, np.nan, np.nan, np.nan,
-        #                  l2_so, snr, snr_a, tr_o.stats.sac.user0])
-        #     adjoint_source[0].data = adjt
-
-        # single value measurements:
-        # else:
-        #     if mtype == 'energy_diff':
-        #         l2_so = 0.5 * (msr_s - msr_o)**2
-        #         msr = msr_o[0]
-        #         msr_a = msr_o[1]
-        #         snr = snratio(tr_o, **options)
-        #         snr_a = snratio(tr_o, **_options_ac)
-        #         l2 = l2_so.sum()
-        #         info.extend([msr_s[0], msr_s[1], msr, msr_a,
-        #                      l2, snr, snr_a, tr_o.stats.sac.user0])
-
-        #         adjoint_source += adjoint_source[0].copy()
-        #         for ix_branch in range(2):
-        #             adjoint_source[ix_branch].data = adjt[ix_branch]
-        #             #adjoint_source[ix_branch].data *= (msr_s[ix_branch] -
-        #             #                                   msr_o[ix_branch])
-
-        #     elif mtype == 'ln_energy_ratio':
-        #         l2_so = 0.5 * (msr_s - msr_o)**2
-        #         msr = msr_o
-        #         snr = snratio(tr_o, **options)
-        #         snr_a = snratio(tr_o, **_options_ac)
-        #         info.extend([msr_s, np.nan, msr, np.nan,
-        #                      l2_so, snr, snr_a, tr_o.stats.sac.user0])
-        #         adjt *= (msr_s - msr_o)
-        #         adjoint_source[0].data = adjt
-
         measurements.loc[i] = info
 
         # save the adjoint source
@@ -298,12 +237,21 @@ def run_measurement(args, comm, size, rank):
 
         g_speed = g_speeds[i]
         window_params['hw'] = hws[i]
-        ms = measurement(source_config, mtype, step, ignore_network,
+        ms = measurement(rank, size, source_config, mtype, step, ignore_network,
                          ix_bandpass=i, bandpass=bandpass[i],
                          step_test=step_test, taper_perc=taper_perc,
                          g_speed=g_speed, window_params=window_params)
 
-        filename = '{}.{}.measurement.csv'.format(mtype, i)
+        filename = 'temp.{}.measurement.csv'.format(rank)
         ms.to_csv(os.path.join(step_dir, filename), index=None)
-
+        comm.barrier()
+        dats = []
+        if rank == 0:
+            for ix_r in range(size):
+                fname = os.path.join(step_dir, 'temp.{}.measurement.csv'.format(ix_r))
+                dats.append(pd.read_csv(fname))
+            dats = pd.concat(dats, ignore_index=True)
+            filename = '{}.{}.measurement.csv'.format(mtype, i)
+            dats.to_csv(os.path.join(step_dir, filename), index=None)
+            os.system("rm " + os.path.join(step_dir, "temp.*.csv"))
     return()
