@@ -326,10 +326,7 @@ def smooth_new_new(inputfile, outputfile, coordfile, sigma, cap, thresh, comm, s
     comm.barrier()
 
     if rank == 0:
-        smoothed_values = v
-    
-    if rank == 0:
-        np.save(outputfile, smoothed_values / (smoothed_values.max() + np.finfo(smoothed_values.min()).eps))
+        np.save(outputfile, v / (v.max() + np.finfo(v.min()).eps))
         os.system("rm temp_?.npy")
         os.system("rm temp_??.npy")
         os.system("rm temp_???.npy")

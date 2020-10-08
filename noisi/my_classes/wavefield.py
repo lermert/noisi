@@ -117,7 +117,7 @@ class WaveField(object):
         print('Copied setup of ' + self.file.filename)
         file.close()
 
-        return(WaveField(newfile, w=self.w, fdomain=self.fdomain, preload=self.preload))
+        return(WaveField(newfile, w="a", preload=self.preload))
 
     def truncate(self, newfile, truncate_after_seconds):
 
