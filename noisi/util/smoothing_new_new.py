@@ -331,13 +331,16 @@ def smooth_new_new(inputfile, outputfile, coordfile, sigma, cap, thresh, comm, s
         v = np.zeros(gradshape)
         for r in range(size):
             v += np.load("temp_{}.npy".format(r))
-        np.save(outputfile, v / (v.max() + np.finfo(v.min()).eps))
+        mx = np.abs(v).max()
+        if mx > 0.0:
+            np.save(outputfile, v / mx)
+        else:
+            np.save(outputfile, v)
         os.system("rm temp_?.npy")
         os.system("rm temp_??.npy")
         os.system("rm temp_???.npy")
 
     else:
         print("nothing to do for rank ", rank)
+    print("Rank returning: ", rank)
     return()
-
-
