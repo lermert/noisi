@@ -244,7 +244,7 @@ def smooth_gaussian(values, coords, rank, size, sigma, ellipsoid):
     # coords format: (lon,lat)
 
     v_smooth = np.zeros(values.shape)
-    print(v_smooth.shape)
+    # print(v_smooth.shape)
 
     a = 1. / (sigma * sqrt(2. * pi))
 
@@ -286,15 +286,16 @@ def apply_smoothing_sphere(rank, size, values, coords, sigma, cap,
     v_smooth = smooth_gaussian(values, coords, rank, size, sigma,
                           ellipsoid=ellipsoid)
     np.save("temp_{}.npy".format(rank), v_smooth)
+    return()
 
-    comm.barrier()
-    v_s = np.zeros(values.shape)
+    #comm.barrier()
+    #v_s = np.zeros(values.shape)
     # rank 0: save the values
-    if rank == 0:
-        for r in range(size):
-            v_s += np.load("temp_{}.npy".format(r))
+    #if rank == 0:
+    #    for r in range(size):
+    #        v_s += np.load("temp_{}.npy".format(r))
 
-    return(v_s)
+    #return(v_s)
 
 
 def smooth_new_new(inputfile, outputfile, coordfile, sigma, cap, thresh, comm, size,
@@ -318,21 +319,25 @@ def smooth_new_new(inputfile, outputfile, coordfile, sigma, cap, thresh, comm, s
 
     values = comm.bcast(values, root=0)
 
-    smoothed_values = np.zeros(values.shape)
+    # smoothed_values = np.zeros(values.shape)
 
-    v = apply_smoothing_sphere(rank, size, values,
+    apply_smoothing_sphere(rank, size, values,
                                coords, sigma, cap, threshold=thresh,
                                comm=comm)
     comm.barrier()
 
     if rank == 0:
+        print("Collecting values, on rank 0")
+        v = np.zeros(gradshape)
+        for r in range(size):
+            v += np.load("temp_{}.npy".format(r))
         np.save(outputfile, v / (v.max() + np.finfo(v.min()).eps))
         os.system("rm temp_?.npy")
         os.system("rm temp_??.npy")
         os.system("rm temp_???.npy")
 
     else:
-        pass
+        print("nothing to do for rank ", rank)
     return()
 
 

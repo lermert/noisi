@@ -47,7 +47,7 @@ def envelope(corr_o, corr_s, g_speed, window_params, dorder=1,
     return adjt_src, success
 
 
-def log_en_ratio_adj(corr_o, corr_s, g_speed, window_params):
+def log_en_ratio_adj(corr_o, corr_s, g_speed, window_params, waterlevel=0.):
 
     success = False
     window = wn.get_window(corr_o.stats, g_speed, window_params)
@@ -68,12 +68,12 @@ def log_en_ratio_adj(corr_o, corr_s, g_speed, window_params):
         sig_a_o = corr_o.data * win[::-1]
         E_plus_o = np.trapz(np.power(sig_c_o, 2)) * delta
         E_minus_o = np.trapz(np.power(sig_a_o, 2)) * delta
-        
+
         # to win**2
         u_plus = sig_c * win
         u_minus = sig_a * win[::-1]
-        adjt_src = 2. * (u_plus / E_plus - u_minus / E_minus) * \
-                (log(E_plus / E_minus) - log(E_plus_o / E_minus_o))
+        adjt_src = 2. * (u_plus / E_plus - u_minus / (E_minus + waterlevel)) * \
+                   (log(E_plus / (E_minus + waterlevel)) - log(E_plus_o / (E_minus_o + waterlevel)))
         success = True
     else:
         adjt_src = win - win + np.nan

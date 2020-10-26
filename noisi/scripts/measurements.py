@@ -83,7 +83,7 @@ def energy(corr_o, corr_s, g_speed, window_params):
     return np.array(msr)
 
 
-def log_en_ratio(corr_o, corr_s, g_speed, window_params):
+def log_en_ratio(corr_o, corr_s, g_speed, window_params, waterlevel=0.):
     delta = corr_o.stats.delta
     window = get_window(corr_o.stats, g_speed, window_params)
     win = window[0]
@@ -95,13 +95,13 @@ def log_en_ratio(corr_o, corr_s, g_speed, window_params):
         sig_a = corr_o.data * win[::-1]
         E_plus = np.trapz(np.power(sig_c, 2)) * delta
         E_minus = np.trapz(np.power(sig_a, 2)) * delta
-        msr_o = log(E_plus / (E_minus))# + np.finfo(E_minus).tiny))
+        msr_o = log(E_plus / (E_minus + waterlevel))# + np.finfo(E_minus).tiny))
         # synthetic
         sig_c = corr_s.data * win
         sig_a = corr_s.data * win[::-1]
         E_plus = np.trapz(np.power(sig_c, 2)) * delta
         E_minus = np.trapz(np.power(sig_a, 2)) * delta
-        msr_s = log(E_plus / (E_minus))# + np.finfo(E_minus).tiny))
+        msr_s = log(E_plus / (E_minus + waterlevel))# + np.finfo(E_minus).tiny))
 
     else:
         msr_o = np.nan

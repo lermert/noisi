@@ -18,7 +18,7 @@ from noisi.scripts import adjnt_functs as af
 # input:
 # *********************************************
 steps = np.arange(-14, 0, 0.1)
-mtype = 'full_waveform'
+mtype = 'ln_energy_ratio'
 sacdict = {'dist': 1e6}
 g_speed = 3700.
 window_params = {}
@@ -28,10 +28,13 @@ window_params['win_overlap'] = False
 window_params['wtype'] = 'hann'
 window_params['causal_side'] = False
 window_params['plot'] = False
+waterlevel = 1.e-2
 # *********************************************
 # *********************************************
 
 m_a_options = {'g_speed': g_speed, 'window_params': window_params}
+if mtype == "ln_energy_ratio":
+    m_a_options["waterlevel"] = waterlevel
 m_func = rm.get_measure_func(mtype)
 a_func = af.get_adj_func(mtype)
 
@@ -51,27 +54,28 @@ c_syn.stats.sac = sacdict
 
 # obtain a measurement and an adjoint source time function
 # for the unperturbed measurement
-msr_o = m_func(c_obs, **m_a_options)
-msr_s = m_func(c_syn, **m_a_options)
+#msr_o = m_func(c_obs, **m_a_options)
+#msr_s = m_func(c_syn, **m_a_options)
+j = m_func(c_obs, c_syn, **m_a_options)
 data, success = a_func(c_obs, c_syn, **m_a_options)
 
 
 if mtype == 'energy_diff':
     data = data[0] + data[1]
-    msr_s = msr_s[0] + msr_s[1]
-    msr_o = msr_o[0] + msr_o[1]
-    data *= (msr_s - msr_o)
+    #msr_s = msr_s[0] + msr_s[1]
+    #msr_o = msr_o[0] + msr_o[1]
+    #data *= (msr_s - msr_o)
 
-elif mtype == 'ln_energy_ratio':
-    data *= (msr_s - msr_o)
+#elif mtype == 'ln_energy_ratio':
+#    data *= (msr_s - msr_o)
 
 elif mtype in ['windowed_waveform', 'full_waveform']:
     pass
 
-if mtype in ['ln_energy_ratio', 'energy_diff']:
-    j = 0.5 * (msr_s - msr_o)**2
-elif mtype in ['full_waveform', 'windowed_waveform', 'square_envelope', 'envelope']:
-    j = 0.5 * np.sum(np.power((msr_s - msr_o), 2))
+#if mtype in ['ln_energy_ratio', 'energy_diff']:
+#    j = 0.5 * (msr_s - msr_o)**2
+#elif mtype in ['full_waveform', 'windowed_waveform', 'square_envelope', 'envelope']:
+#    j = 0.5 * np.sum(np.power((msr_s - msr_o), 2))
 
 # left hand side of test 1:
 # adjt source time function * du = change of misfit wrt u
@@ -85,13 +89,14 @@ d_ch = c_syn.copy()
 
 for step in steps:
     d_ch.data = c_ini + 10. ** step * d_c
-    msr_sh = m_func(d_ch, **m_a_options)
-    if mtype == 'energy_diff':
-        msr_sh = msr_sh[0] + msr_sh[1]
+    jh = m_func(c_obs, d_ch, **m_a_options)
+    #msr_sh = m_func(d_ch, **m_a_options)
+    #if mtype == 'energy_diff':
+    #    msr_sh = msr_sh[0] + msr_sh[1]
 
-    jh = 0.5 * (msr_sh - msr_o)**2
-    if mtype in ['full_waveform', 'windowed_waveform', 'envelope', 'square_envelope']:
-        jh = 0.5 * np.sum(np.power((msr_sh - msr_o), 2))
+    #jh = 0.5 * (msr_sh - msr_o)**2
+    #if mtype in ['full_waveform', 'windowed_waveform', 'envelope', 'square_envelope']:
+    #    jh = 0.5 * np.sum(np.power((msr_sh - msr_o), 2))
 
     djdch = (jh - j) / (10.**step)
     dcheck.append(abs(djdc - djdch) / abs(djdc))
