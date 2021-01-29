@@ -3,6 +3,7 @@
 # source_path: added automatically, no need to edit
 # date_created: added automatically, no need to edit
 # get_auto_corr: compute autocorrelations (true / false)
+# only_auto_corr: ONLY compute autocorrelations (true / false)
 # rotate_horizontal_components: During modeling, should ENZ
 # be rotated to RTZ with respect to the interstation azimuth (true / false)
 # diagonals: (true / false): If wavefield channel is set to "all" in

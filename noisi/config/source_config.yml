@@ -6,6 +6,7 @@
     "diagonals": false,
     "rotate_horizontal_components": false,
     "get_auto_corr": true,
+    "only_auto_corr": false,
     "model_observed_only": false,
     "max_lag": 300,
     "source_setup_file": "" 

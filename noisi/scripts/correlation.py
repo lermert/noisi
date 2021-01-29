@@ -46,6 +46,10 @@ class config_params(object):
                                                        'config.yml')))
         self.obs_only = self.source_config['model_observed_only']
         self.auto_corr = self.source_config['get_auto_corr']
+        try:
+            self.only_auto_corr = self.source_config["only_auto_corr"]
+        except KeyError:
+            self.only_auto_corr = False
         with open(os.path.join(self.args.source_model,
                   'measr_config.yml')) as mconf:
             self.measr_config = yaml.safe_load(mconf)
@@ -108,7 +112,8 @@ def define_correlation_tasks(all_conf, comm, size, rank):
 
     p = define_correlationpairs(all_conf.source_config
                                 ['project_path'],
-                                all_conf.auto_corr)
+                                all_conf.auto_corr,
+                                all_conf.only_auto_corr)
     if rank == 0 and all_conf.config['verbose']:
         print('Nr all possible correlation pairs %g ' % len(p))
 

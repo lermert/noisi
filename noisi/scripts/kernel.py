@@ -271,7 +271,8 @@ different number of source components."
 def define_kernel_tasks(all_conf, comm, size, rank):
 
     p = define_correlationpairs(all_conf.source_config['project_path'],
-                                auto_corr=all_conf.auto_corr)
+                                auto_corr=all_conf.auto_corr,
+                                only_auto_corr=all_conf.only_auto_corr)
     if rank == 0 and all_conf.config['verbose']:
         print('Nr all possible kernels %g ' % len(p))
 

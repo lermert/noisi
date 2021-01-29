@@ -5,6 +5,7 @@ import yaml
 
 
 def define_correlationpairs(proj_dir, auto_corr=False,
+                            only_auto_corr=False,
                             only_observed=True, channel='*'):
     """
     Match correlation pairs.
@@ -34,6 +35,8 @@ def define_correlationpairs(proj_dir, auto_corr=False,
         sta_0 = stations[i].strip()
         if auto_corr:
             stas_other = stations[i:]
+        if only_auto_corr:
+            stas_other = stations[i]
         else:
             stas_other = stations[i + 1:]
         i += 1
