@@ -26,11 +26,13 @@ try:
 except ImportError:
     pass
 import re
+from profilehooks import profile
+import time
 
 
 class config_params(object):
     """collection of input parameters"""
-
+    #@profile
     def __init__(self, args, comm, size, rank):
         self.args = args
         source_configfile = os.path.join(self.args.source_model,
@@ -72,7 +74,7 @@ class config_params(object):
             else:
                 self.filtcnt = len(bandpass)
 
-
+#@profile
 def add_input_files(cp, all_conf, insta=False):
 
     inf1 = cp[0].split()
@@ -107,7 +109,7 @@ def add_input_files(cp, all_conf, insta=False):
 
     return(input_file_list)
 
-
+#@profile
 def define_correlation_tasks(all_conf, comm, size, rank):
 
     p = define_correlationpairs(all_conf.source_config
@@ -173,7 +175,7 @@ def define_correlation_tasks(all_conf, comm, size, rank):
 
     return(p_p, num_pairs, len(p))
 
-
+#@profile
 def add_output_files(cp, all_conf):
 
     corr_traces = []
@@ -200,7 +202,7 @@ def add_output_files(cp, all_conf):
                                        'corr', corr_trace_name)
         corr_traces.append(corr_trace_name)
     return corr_traces
-
+#@profile
 def get_ns(all_conf, insta=False):
     # Nr of time steps in traces
     any_wavefield = glob(os.path.join(all_conf.config['project_path'],
@@ -225,7 +227,7 @@ def get_ns(all_conf, insta=False):
 
     return nt, n, n_corr, Fs
 
-
+#@profile
 def compute_correlation(input_files, all_conf, nsrc, all_ns, taper,
                         insta=False):
     """
@@ -239,6 +241,7 @@ def compute_correlation(input_files, all_conf, nsrc, all_ns, taper,
     info later if needed.
     """
 
+    proftime0 = time.time()
     wf1, wf2 = input_files
     ntime, n, n_corr, Fs = all_ns
     ntraces = nsrc.src_loc[0].shape[0]
@@ -247,6 +250,9 @@ def compute_correlation(input_files, all_conf, nsrc, all_ns, taper,
 
     wf1 = WaveField(wf1, preload=all_conf.config["preload"])
     wf2 = WaveField(wf2, preload=all_conf.config["preload"])
+
+    proftime1 = time.time()
+
 
     station1 = wf1.stats['reference_station']
     station2 = wf2.stats['reference_station']
@@ -263,6 +269,8 @@ def compute_correlation(input_files, all_conf, nsrc, all_ns, taper,
 
     # Loop over source locations
     print_each_n = max(5, round(max(ntraces // 5, 1), -1))
+    proftime2 = time.time()
+
     for i in range(ntraces):
 
         # noise source spectrum at this location
@@ -321,6 +329,10 @@ different number of source components."
             print("Finished {} of {} source locations.".format(i, ntraces))
             
 # end of loop over all source locations #######################################
+    proftime3 = time.time()
+    print("Time for reading wavefields:{} ".format(proftime1-proftime0))
+    print("Time for other prelim. steps: {}".format(proftime2-proftime1))
+    print("Time for source loop: {}".format(proftime3-proftime2))
     return(correlation, station1, station2)
 
 
