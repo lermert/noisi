@@ -48,12 +48,17 @@ class NoiseSource(object):
         if self.model is not None:
             self.model.close()
 
-    def get_spect(self, iloc, by_index=True):
+    def get_spect(self, iloc, iloc_2=None, by_index=True):
 
         # return one spectrum in location with index iloc
-        spec= np.dot(self.distr_basis[:, iloc, :],
-                      self.spect_basis)
+        if iloc_2 is None:
+            spec= np.dot(self.distr_basis[:, iloc, :],
+                         self.spect_basis)
+        else:
+            spec = np.dot(self.distr_basis[:, iloc: iloc_2, :],
+                          self.spect_basis)
         return(np.clip(spec, 0., spec.max()))
+
     def plot(self, **options):
         comp = {0:"E", 1: "N", 2: "Z"}
         # plot the distribution

@@ -52,6 +52,10 @@ class config_params(object):
             self.only_auto_corr = self.source_config["only_auto_corr"]
         except KeyError:
             self.only_auto_corr = False
+        try:
+            self.chunk = self.source_config["chunk"]
+        except KeyError:
+            self.chunk = 1
         with open(os.path.join(self.args.source_model,
                   'measr_config.yml')) as mconf:
             self.measr_config = yaml.safe_load(mconf)
@@ -246,7 +250,7 @@ def compute_correlation(input_files, all_conf, nsrc, all_ns, taper,
     ntime, n, n_corr, Fs = all_ns
     ntraces = nsrc.src_loc[0].shape[0]
     correlation = np.zeros(n_corr)
-
+    chunk = all_conf.chunk
 
     wf1 = WaveField(wf1, preload=all_conf.config["preload"])
     wf2 = WaveField(wf2, preload=all_conf.config["preload"])
@@ -271,32 +275,37 @@ def compute_correlation(input_files, all_conf, nsrc, all_ns, taper,
     print_each_n = max(5, round(max(ntraces // 5, 1), -1))
     proftime2 = time.time()
 
-    for i in range(ntraces):
+    for i in range(0, ntraces, chunk):
+
+        ix_0 = i
+        ix_1 = min(i + chunk, ntraces)
 
         # noise source spectrum at this location
-        S = nsrc.get_spect(i)
+        S = nsrc.get_spect(ix_0, ix_1)
 
         if S.sum() == 0.:
             # If amplitude is 0, continue. (Spectrum has 0 phase anyway.)
             continue
 
         if not wf1.fdomain:
-            s1 = np.ascontiguousarray(wf1.get_green(i))
-            s2 = np.ascontiguousarray(wf2.get_green(i))
+            s1 = np.ascontiguousarray(wf1.get_green(i, ix_1))
+            s2 = np.ascontiguousarray(wf2.get_green(i, ix_1))
             assert s1.shape == s2.shape, "Wave fields 1, 2 cannot have\
 different number of source components."
             #spec1 = np.zeros(S.shape, dtype=np.complex128)
             #spec2 = np.zeros(S.shape, dtype=np.complex128)
-
+            tap = np.zeros(s1.shape)
             for ix_gf in range(s1.shape[0]):
-                s1[ix_gf, :] *= taper
-                s2[ix_gf, :] *= taper
-                #spec1[ix_gf, :] = np.fft.rfft(s1[ix_gf, :], n)
-                #spec2[ix_gf, :] = np.fft.rfft(s2[ix_gf, :], n)
+                for ix_c in range(s1.shape[1]):
+                    tap[ix_gf, ix_c, :] = taper
+            s1 *= taper
+            s2 *= taper
+            # to do: prepare taper even before the loop
                            
-            spec1 = np.fft.rfft(s1, n)
+            spec1 = np.fft.rfft(s1, n)  # axis is -1 by default
             spec2 = np.fft.rfft(s2, n)
         else:
+            raise NotImplementedError("Currently under construction")
             spec1 = np.zeros((3, ntime))
             spec2 = np.zeros((3, ntime))
             try:
@@ -321,9 +330,12 @@ different number of source components."
         c = np.multiply(g1g2_tr, S)
         # sum up contribution of sources components (z, n, e) to this component
         c = np.sum(c, axis=0)
+        # multiply by surface area:
+        c = np.multiply(c.T, nsrc.surf_area[i: ix_1]).T
         # transform back
-        correlation += my_centered(np.fft.fftshift(np.fft.irfft(c, n), axes=-1),
-                                   n_corr) * nsrc.surf_area[i]
+        # sum up contributions of the chunk
+        correlation += my_centered(np.sum(np.fft.fftshift(np.fft.irfft(c, n), axes=-1),
+                                   axis=0), n_corr)
         # occasional info
         if i % print_each_n == 0 and all_conf.config['verbose']:
             print("Finished {} of {} source locations.".format(i, ntraces))
@@ -365,8 +377,7 @@ def run_corr(args, comm, size, rank):
     # Distributing the tasks
     correlation_tasks, n_p_p, n_p = define_correlation_tasks(all_conf,
                                                              comm, size, rank)
-    if len(correlation_tasks) == 0:
-        return()
+
     if all_conf.config['verbose']:
         print('Rank number %g' % rank)
         print('working on pair nr. %g to %g of %g.' % (rank * n_p_p,

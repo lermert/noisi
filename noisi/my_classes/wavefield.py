@@ -88,12 +88,19 @@ class WaveField(object):
                                         d=1. / self.stats['Fs'])
 
 
-    def get_green(self, ix=None, by_index=True):
+    def get_green(self, ix=None, ix2=None, by_index=True):
 
         if by_index:
-            data_out = np.empty((len(self.data), self.stats['nt']))
-            for ix_data, key in enumerate(self.data.keys()):
-                data_out[ix_data, :] = self.data[key][ix, :]
+            if ix2 is not None:
+                data_out = np.empty((len(self.data), ix2 - ix,
+                                     self.stats['nt']))
+                for ix_data, key in enumerate(self.data.keys()):
+                    data_out[ix_data, :, :] = self.data[key][ix: ix2, :]
+            else:
+                data_out = np.empty((len(self.data), 1,
+                                     self.stats['nt']))
+                for ix_data, key in enumerate(self.data.keys()):
+                    data_out[ix_data, 0, :] = self.data[key][ix, :]
             return(data_out)
         else:
             raise NotImplementedError("Not yet implemented.")

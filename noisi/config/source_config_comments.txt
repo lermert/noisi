@@ -15,3 +15,4 @@
 # source setup file: File containing parameters that describe the 
 #     starting model for the source: Find an example
 #     under examples/source_setup_parameters.yaml
+# chunk: Integer, length of items in vectorized integration
