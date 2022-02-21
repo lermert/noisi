@@ -106,8 +106,8 @@ def plot_grid(map_x, map_y, map_z, stations=[], locations=[], v=None,
                        cmap=cmap, s=size, vmin=v_min, vmax=v,
                        transform=ccrs.PlateCarree())
     if axes is None and colorbar:
-        cbar = plt.colorbar(scplt)
-        cbar.ax.get_yaxis().labelpad = 15
+        cbar = plt.colorbar(scplt, shrink=0.7, pad=0.1)
+        cbar.ax.get_yaxis().labelpad = 10
         cbar.set_label(quant_unit, rotation=270)
         if colorbar_ticks is not None:
             cbar.set_ticks(colorbar_ticks[0])

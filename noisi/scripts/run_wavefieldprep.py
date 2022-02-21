@@ -7,9 +7,10 @@ import numpy as np
 from math import pi
 import h5py
 from obspy.geodetics import gps2dist_azimuth
+from obspy.signal.invsim import cosine_taper
 from noisi import WaveField
 from scipy.fftpack import next_fast_len
-from scipy.signal import lfilter, butter
+from scipy.signal import lfilter, butter, sosfiltfilt
 from noisi.util.geo import geograph_to_geocent
 from glob import glob
 try:
@@ -126,9 +127,10 @@ reset to 95\% of Nyquist freq.")
 
             f0 = freq_min / freq_nyq
             f1 = freq_max / freq_nyq
-            self.filter = butter(4, [f0, f1], 'bandpass')
+            self.filter = butter(4, [f0, f1], 'bandpass', output="sos")
         else:
             self.filter = None
+
 
         # if using instaseis: Find and open database
         if self.config['wavefield_type'] == 'instaseis':
@@ -136,13 +138,18 @@ reset to 95\% of Nyquist freq.")
             self.db = instaseis.open_db(path_to_db)
             if self.db.info['length'] < self.npts / self.Fs:
                 warn("Resetting wavefield duration to axisem database length.")
-                fsrc = instaseis.ForceSource(latitude=0.0,
-                                             longitude=0.0, f_r=1.0)
-                rec = instaseis.Receiver(latitude=0.0, longitude=0.0)
-                test = self.db.get_seismograms(source=fsrc,
-                                               receiver=rec,
-                                               dt=1. / self.Fs)
-                self.npts = test[0].stats.npts
+            fsrc = instaseis.ForceSource(latitude=0.0,
+                                         longitude=0.0, f_r=1.0,
+                                         depth_in_m=0.0)
+            rec = instaseis.Receiver(latitude=0.0, longitude=0.0)
+            test = self.db.get_seismograms(source=fsrc,
+                                           receiver=rec,
+                                           dt=1. / self.Fs)
+            self.npts = test[0].stats.npts
+
+         # taper if filtering
+        self.taper = cosine_taper(self.npts, p=0.05)
+
 
     def green_from_instaseis(self, station, channel):
 
@@ -200,7 +207,8 @@ reset to 95\% of Nyquist freq.")
                 lon_src = self.sourcegrid[0, i]
 
                 fsrc = instaseis.ForceSource(latitude=lat_src,
-                                             longitude=lon_src, f_r=point_f)
+                                             longitude=lon_src, f_r=point_f,
+                                             depth_in_m=0.0)
                 if self.config['synt_data'] == 'DIS':
                     values = self.db.get_seismograms(source=fsrc,
                                                      receiver=rec,
@@ -221,8 +229,10 @@ reset to 95\% of Nyquist freq.")
 Choose DIS, VEL or ACC in configuration.')
 
                 trace = values.select(component=channel)[0].data
+                
                 if self.filter is not None:
-                    trace = lfilter(*self.filter, x=trace)
+                    trace *= self.taper
+                    trace = sosfiltfilt(sos=self.filter, x=trace)
 
                 if self.fdomain:
                     trace_fd = np.fft.rfft(trace[0: self.npts],
@@ -312,7 +322,7 @@ invalid for horizontal components; set channel to \"Z\" or use instaseis.")
 
                 # apply a filter if asked for
                 if self.filter is not None:
-                        trace = lfilter(*self.filter, x=s)
+                        trace = sosfiltfilt(sos=self.filter, x=s)
 
                 if self.fdomain:
                     f['data'][i, :] = np.fft.rfft(trace, n=self.npad)

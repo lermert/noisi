@@ -236,6 +236,9 @@ resetting to last sample.')
             quant_unit = 'Velocity (m/s)'
         elif data_quantity == 'ACC':
             quant_unit = 'Acceleration (m/s^2)'
+        else:
+            print("unknown data quantity")
+            quant_unit = "Stuff"
 
         plot.plot_grid(map_x, map_y,
                        self.get_snapshot(t, resolution=resolution),

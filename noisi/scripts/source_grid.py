@@ -19,11 +19,16 @@ def create_sourcegrid(config):
         print("Configuration used to set up source grid:", end="\n")
         pp = pprint.PrettyPrinter()
         pp.pprint(config)
+    try:
+        rando = config["random_shift_longitude"]
+    except KeyError:
+        rando = False
     grid = points_on_ell(config['grid_dx_in_m'],
                          xmin=config['grid_lon_min'],
                          xmax=config['grid_lon_max'],
                          ymin=config['grid_lat_min'],
-                         ymax=config['grid_lat_max'])
+                         ymax=config['grid_lat_max'],
+                         randomize=rando)
     sources = np.zeros((2, len(grid[0])))
     sources[0:2, :] = grid
 
