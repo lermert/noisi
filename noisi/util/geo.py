@@ -197,7 +197,7 @@ def points_on_ell(dx, xmin=-180., xmax=180., ymin=-89.999, ymax=89.999):
         d_lon = dx / len_deg_lon(lat)
         # the starting point of each longitudinal circle is randomized
         perturb = np.random.rand(1)[0] * d_lon - 0.5 * d_lon
-        lon = min(max(xmin + perturb, -180.), 180.)
+        lon = min(max(xmin + perturb, xmin), xmax)
 
         while lon <= xmax:
             gridx.append(lon)
