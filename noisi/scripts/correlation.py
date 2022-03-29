@@ -245,10 +245,17 @@ def get_ns(all_conf, insta=False):
     # n = next_fast_len(2 * nt - 1)
 
     # Number of time steps for synthetic correlation
-    n_lag = int(all_conf.source_config['max_lag'] * Fs)
-    if nt - 2 * n_lag <= 0:
+    n_lag_float = all_conf.source_config['max_lag'] * Fs
+    n_lag = int(n_lag_float)
+
+    if not n_lag_float.is_integer():
+        warn('Resetting maximum lag to %g seconds:\
+ %g seconds is not an integer multiple of the sampling rate.' %
+ (n_lag/Fs, n_lag_float/Fs))
+
+    if n_lag > nt - 1:
         n_lag_old = n_lag
-        n_lag = nt // 2
+        n_lag = nt - 1
         warn('Resetting maximum lag to %g seconds:\
  Synthetics are too short for %g seconds.' % (n_lag / Fs, n_lag_old / Fs))
 

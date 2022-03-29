@@ -118,7 +118,7 @@ class precomp_wavefield(object):
 
             if freq_nyq < self.config['wavefield_filter'][1]:
                 warn("Selected upper freq > Nyquist, \
-reset to 95\% of Nyquist freq.")
+reset to 95 percent of Nyquist freq.")
             freq_minres = 1. / self.config['wavefield_duration']
             # lowest resolved
             freq_max = min(0.999 * freq_nyq,
