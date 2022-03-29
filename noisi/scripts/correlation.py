@@ -253,13 +253,13 @@ def get_ns(all_conf, insta=False):
  %g seconds is not an integer multiple of the sampling rate.' %
  (n_lag/Fs, n_lag_float/Fs))
 
-    if n_lag > nt:
+    if n_lag > nt - 1:
         n_lag_old = n_lag
-        n_lag = nt
+        n_lag = nt - 1
         warn('Resetting maximum lag to %g seconds:\
  Synthetics are too short for %g seconds.' % (n_lag / Fs, n_lag_old / Fs))
 
-    n_corr = 2 * n_lag - 1
+    n_corr = 2 * n_lag + 1
 
     return nt, n, n_corr, Fs
 
