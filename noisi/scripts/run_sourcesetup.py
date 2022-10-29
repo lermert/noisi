@@ -184,7 +184,8 @@ precompute_wavefield first.')
         # plotting is not necessarily done to make sure code runs on clusters
         if create_plot:
             fig1 = plt.figure()
-            ax = fig1.add_subplot('111')
+#            ax = fig1.add_subplot('111')
+            ax = fig1.add_subplot(111)
             for i in range(n_distr):
                 ax.plot(freq, spectra[i, :] / spectra.max(),
                         color=colors[i%len(colors_cmaps)])
