@@ -25,14 +25,19 @@ def nice_map(ax, lat_min, lat_max, lon_min, lon_max,
 
     try:
         gl = ax.gridlines(draw_labels=True)
+# some attributes are deprecated, update for new version of cartopy.       
         if not latitude_labels_east:
-            gl.ylabels_right = False
+#            gl.ylabels_right = False
+            gl.right_labels = False
         if not longitude_labels_north:
-            gl.xlabels_top = False
+#            gl.xlabels_top = False
+            gl.top_labels = False
         if not latitude_labels_west:
-            gl.ylabels_left = False
+#            gl.ylabels_left = False
+            gl.left_labels = False
         if not longitude_labels_south:
-            gl.xlabels_bottom = False
+#            gl.xlabels_bottom = False
+            gl.bottom_labels = False
 
         if latitude_labels_west:  # -0.15 or so for square plots
             ax.text(axislabelpad, 0.5, 'Latitude (°)',
