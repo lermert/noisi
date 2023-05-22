@@ -9,6 +9,8 @@
 # grid_lat_max: maximum lat in degrees (-90 - 90)
 # grid_lon_min: minimum lon in degrees (-180 - 180)
 # grid_lon_max: maximum lon in degrees (-180 - 180)
+# only_ocean_sources: if set to true, then source locations on land will be
+# discarded upfront
 # synt_data: specify if your synthetics shall be displacement
 #                (DIS), velocity (VEL) or acceleration (ACC)
 # wavefield_type: set here the type of wavefield you want to use: 

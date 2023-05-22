@@ -38,6 +38,7 @@ def is_land(x, y, res="110m"):
     is_land = np.zeros(len(x))
     for i in range(len(x)):
         is_land[i] = land.contains(sgeom.Point(x[i], y[i]))
+    is_land = np.array(is_land, dtype=bool)
     return is_land
 
 

@@ -2,7 +2,7 @@ import numpy as np
 import yaml
 import os
 import io
-from noisi.util.geo import points_on_ell
+from noisi.util.geo import points_on_ell, is_land
 try:
     from noisi.util.plot import plot_sourcegrid
 except ImportError:
@@ -46,6 +46,11 @@ def setup_sourcegrid(args, comm, size, rank):
     grid_filename = os.path.join(config['project_path'], 'sourcegrid.npy')
     sourcegrid = create_sourcegrid(config)
 
+    if config["only_ocean_sources"]:
+        land = is_land(sourcegrid[0], sourcegrid[1])
+        print(land, land.shape)
+        sourcegrid = sourcegrid[:, ~land]
+    print("{} Ocean-only sources.".format(len(sourcegrid[0])))
     # plot
     try:
         plot_sourcegrid(sourcegrid,

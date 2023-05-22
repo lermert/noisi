@@ -9,6 +9,7 @@
     "grid_lon_min": -15,    
     "grid_lon_max": 25,
     "random_shift_longitude": false,
+    "ocean_only_sources": true,
     "synt_data": "DIS",      
     "wavefield_duration": 800.0, 
     "wavefield_type": "analytic",
