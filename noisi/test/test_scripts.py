@@ -47,7 +47,7 @@ def test_precomp_wavefield():
     spec = p.green_spec_analytic(10000.)
 
     assert(type(spec) == np.ndarray)
-    assert(spec.dtype == np.complex)
+    assert(spec.dtype == complex)
     assert(len(spec) == 3601)
     assert(pytest.approx(spec[1]) == 0.0177158666914 - 0.0178711453095j)
 
@@ -159,8 +159,8 @@ def test_spherical_surface_elements():
 
 def test_windows():
 
-    array1 = np.zeros(7, dtype=np.int)
-    array2 = np.zeros(8, dtype=np.int)
+    array1 = np.zeros(7, dtype=np.int32)
+    array2 = np.zeros(8, dtype=np.int32)
     array1[3] = 1
     array2[4] = 1
 

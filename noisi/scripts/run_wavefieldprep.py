@@ -249,7 +249,7 @@ Choose DIS, VEL or ACC in configuration.')
         rho = self.args.rho
         freq = self.freq
         w = 2. * pi * freq
-        g_fd = np.zeros(freq.shape, dtype=np.complex)
+        g_fd = np.zeros(freq.shape, dtype=complex)
         f = float(self.config['wavefield_point_force'])
 
         # evaluate the Greens fct.
