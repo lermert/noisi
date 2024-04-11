@@ -8,6 +8,7 @@ import os
 import io
 import errno
 from noisi import WaveField
+from scipy.signal import tukey
 from noisi.util.geo import is_land, geographical_distances
 from noisi.util.geo import get_spherical_surface_elements
 try:
@@ -184,7 +185,7 @@ precompute_wavefield first.')
         # plotting is not necessarily done to make sure code runs on clusters
         if create_plot:
             fig1 = plt.figure()
-            ax = fig1.add_subplot('111')
+            ax = fig1.add_subplot(111)
             for i in range(n_distr):
                 ax.plot(freq, spectra[i, :] / spectra.max(),
                         color=colors[i%len(colors_cmaps)])
@@ -202,11 +203,11 @@ precompute_wavefield first.')
                                     'starting_model.h5'), 'w') as fh:
             fh.create_dataset('coordinates', data=grd)
             fh.create_dataset('frequencies', data=freq)
-            fh.create_dataset('model', data=coeffs.astype(np.float))
+            fh.create_dataset('model', data=coeffs.astype(float))
             fh.create_dataset('spectral_basis',
-                              data=spectra.astype(np.float))
+                              data=spectra.astype(float))
             fh.create_dataset('surface_areas',
-                              data=surf_el.astype(np.float))
+                              data=surf_el.astype(float))
 
         # Save to an hdf5 file
         with h5py.File(os.path.join(args.source_model,
@@ -214,11 +215,11 @@ precompute_wavefield first.')
             uniform_spatial = np.ones(coeffs.shape) * 1.0
             fh.create_dataset('coordinates', data=grd)
             fh.create_dataset('frequencies', data=freq)
-            fh.create_dataset('model', data=uniform_spatial.astype(np.float))
+            fh.create_dataset('model', data=uniform_spatial.astype(float))
             fh.create_dataset('spectral_basis',
-                              data=spectra.astype(np.float))
+                              data=spectra.astype(float))
             fh.create_dataset('surface_areas',
-                              data=surf_el.astype(np.float))
+                              data=surf_el.astype(float))
 
     def distribution_from_parameters(self, grd, parameters, verbose=False):
 
@@ -256,13 +257,23 @@ precompute_wavefield first.')
 
     def spectrum_from_parameters(self, freq, parameters):
 
-        mu = parameters['mean_frequency_Hz']
-        sig = parameters['standard_deviation_Hz']
-        taper = cosine_taper(len(freq), parameters['taper_percent'] / 100.)
-        spec = taper * np.exp(-((freq - mu) ** 2) /
-                              (2 * sig ** 2))
+        # Gaussian:
+        if parameters['spectrum'] == "gaussian":
+            mu = parameters['mean_frequency_Hz']
+            sig = parameters['standard_deviation_Hz']
+            taper = cosine_taper(len(freq), parameters['taper_percent'] / 100.)
+            spec = taper * np.exp(-((freq - mu) ** 2) /
+                                  (2 * sig ** 2))
 
-        if not parameters['normalize_spectrum_to_unity']:
-            spec = spec / (sig * sqrt(2. * pi))
+            if not parameters['normalize_spectrum_to_unity']:
+                spec = spec / (sig * sqrt(2. * pi))
+        elif parameters["spectrum"] == "tukey":
+            f0 = parameters['lower_frequency_Hz']
+            f1 = parameters['higher_frequency_Hz']
+            alpha = parameters['tukey_alpha']
+            ixf0 = np.argmin((freq - f0)**2)
+            ixf1 = np.argmin((freq - f1)**2)
+            spec = np.zeros(len(freq))
+            spec[ixf0: ixf1] = tukey(ixf1-ixf0, alpha=alpha)
 
         return(spec)

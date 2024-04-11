@@ -7,22 +7,17 @@ def my_centered(arr, newsize):
     if newsize % 2 == 0:
         raise ValueError('Newsize must be odd.')
 
-    # pad with zeros, if newsize > len(arr)
-    newarr = np.zeros(newsize)
+    n = len(arr)
+    if n % 2 == 0:
+        raise ValueError("How did we get here? n_corr must be odd.")
+
 
     # get the center portion of a 1-dimensional array correctly
-    n = len(arr)
     i0 = (n - newsize) // 2
     if i0 < 0:
-        i0 = (newsize - n) // 2
-        newarr[i0: i0 + n] += arr
-
-    else:
-        if n % 2 == 0:
-            # This is arbitrary
-            # because the array has no 'center' sample
-            i0 += 1
-        newarr[:] += arr[i0: i0 + newsize]
+        raise ValueError("Output correlation cannot be longer than Greens functions.")
+    else:      
+        newarr = arr[i0: i0 + newsize]
     return newarr
 
 

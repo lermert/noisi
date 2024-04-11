@@ -33,3 +33,5 @@
 # wavefield_filter: (list of floats) [freq_min, freq_max] of prepared green's functions in Hz.
 # wavefield_channel: (string) Synthetics channel (of recording), Z, E, N or "all". This
 # also determines which correlation channels (ZZ, ZE, ZN...NN...) are computed.
+# load_to_memory: loads the entire wavefield of one receiver into memory
+# Can be faster but depends on the system

@@ -17,5 +17,6 @@
     "wavefield_domain": "time",
     "wavefield_sampling_rate": 0.5,
     "wavefield_filter": [0.01, 0.2],
-    "wavefield_channel": "Z"
+    "wavefield_channel": "Z",
+    "load_to_memory": false
 }

@@ -370,7 +370,7 @@ def compute_correlation(input_files, all_conf, nsrc, all_ns, taper,
         c = np.multiply(g1g2_tr, S)
 
         # transform back
-        correlation += my_centered(np.fft.fftshift(np.fft.irfft(c, n)),
+        correlation += my_centered(np.fft.fftshift(np.fft.irfft(c[:-1], n - 1)),
                                    n_corr) * nsrc.surf_area[i]
         # occasional info
         if i % print_each_n == 0 and all_conf.config['verbose']:

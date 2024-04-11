@@ -56,8 +56,10 @@ class NoiseSource(object):
     def get_spect(self, iloc, by_index=True):
 
         # return one spectrum in location with index iloc
-        return np.dot(self.distr_basis[iloc, :],
+        spec_i = np.dot(self.distr_basis[iloc, :],
                       self.spect_basis)
+        spec_i [spec_i < 0] = 0.
+        return spec_i
     
     def get_spect_all(self):
         
