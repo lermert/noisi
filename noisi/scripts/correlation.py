@@ -45,9 +45,9 @@ class config_params(object):
                                                        'config.yml')))
         self.obs_only = self.source_config['model_observed_only']
         self.auto_corr = self.source_config['get_auto_corr']
-        with open(os.path.join(self.args.source_model,
-                  'measr_config.yml')) as mconf:
-            self.measr_config = yaml.safe_load(mconf)
+        # with open(os.path.join(self.args.source_model,
+        #           'measr_config.yml')) as mconf:
+        #     self.measr_config = yaml.safe_load(mconf)
 
         # if self.config['wavefield_channel'] == "all" and not\
         #  self.source_config["rotate_horizontal_components"] and not\
@@ -75,15 +75,15 @@ class config_params(object):
         else:
             self.output_channels = [2 * self.config["wavefield_channel"]]
 
-        # Figure out how many frequency bands are measured
-        bandpass = self.measr_config['bandpass']
-        if bandpass is None:
-            self.filtcnt = 1
-        elif type(bandpass) == list:
-            if type(bandpass[0]) != list:
-                self.filtcnt = 1
-            else:
-                self.filtcnt = len(bandpass)
+        # # Figure out how many frequency bands are measured
+        # bandpass = self.measr_config['bandpass']
+        # if bandpass is None:
+        #     self.filtcnt = 1
+        # elif type(bandpass) == list:
+        #     if type(bandpass[0]) != list:
+        #         self.filtcnt = 1
+        #     else:
+        #         self.filtcnt = len(bandpass)
 
 
 def add_input_files(cp, all_conf, insta=False):
@@ -300,8 +300,12 @@ def compute_correlation(input_files, all_conf, nsrc, all_ns, taper,
     else:
         wf1 = WaveField(wf1)
         wf2 = WaveField(wf2)
-        station1 = wf1.stats['reference_station']
-        station2 = wf2.stats['reference_station']
+        try:
+            station1 = wf1.stats['reference_station']
+            station2 = wf2.stats['reference_station']
+        except:
+            station1 = ""
+            station2 = ""
 
         # Make sure all is consistent
         if False in (wf1.sourcegrid[1, 0:10] == wf2.sourcegrid[1, 0:10]):

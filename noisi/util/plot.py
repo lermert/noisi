@@ -109,7 +109,7 @@ def plot_grid(map_x, map_y, map_z, stations=[], locations=[], v=None,
     scplt = ax.scatter(map_x, map_y, c=map_z,
                        alpha=alpha, marker='.',
                        cmap=cmap, s=size, vmin=v_min, vmax=v,
-                       transform=ccrs.PlateCarree())
+                       )
     if axes is None and colorbar:
         cbar = plt.colorbar(scplt, shrink=0.7, pad=0.1)
         cbar.ax.get_yaxis().labelpad = 10
@@ -160,7 +160,7 @@ def plot_sourcegrid(gridpoints, coastres='110m', size=None,
     if size is None:
         size = 100. * abs(gridpoints[0, 1] - gridpoints[0, 0])
     ax.scatter(gridpoints[0], gridpoints[1], s=size, marker='.',
-               transform=ccrs.PlateCarree(), **kwargs)
+               transform=proj(), **kwargs)
     ax.coastlines(resolution=coastres)
 
     if outfile is None:

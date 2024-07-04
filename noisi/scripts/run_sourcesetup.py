@@ -22,6 +22,20 @@ from warnings import warn
 import pprint
 
 
+def one_sided_tukey_taper(x, max_x, taper_fraction=0.05):
+    if isinstance(x, np.ndarray):
+        y = 0.5 + 0.5 * np.cos(np.pi * (x / (taper_fraction * max_x) - 1))
+        y[x >= taper_fraction*max_x] = 1.0
+        return(y)
+    elif isinstance(x, float):
+        if x >= taper_fraction * max_x:
+            return(1.)
+        else:
+            return(0.5 + 0.5 * np.cos(np.pi * (x / (taper_fraction * max_x) - 1)))
+    else:
+        raise ValueError("Wrong input type for x, must be np.ndarray or float")
+    
+
 class source_setup(object):
 
     def __init__(self, args, comm, size, rank):
@@ -227,13 +241,13 @@ precompute_wavefield first.')
             if verbose:
                 print('Adding homogeneous distribution')
             distribution = np.ones(grd.shape[-1])
-            return(float(parameters['weight']) * distribution)
+            
 
         elif parameters['distribution'] == 'ocean':
             if verbose:
                 print('Adding ocean-only distribution')
             is_ocean = np.abs(is_land(grd[0], grd[1]) - 1.)
-            return(float(parameters['weight']) * is_ocean)
+            distribution = is_ocean
 
         elif parameters['distribution'] == 'gaussian_blob':
             if verbose:
@@ -252,8 +266,16 @@ precompute_wavefield first.')
             if parameters['only_in_the_ocean']:
                 is_ocean = np.abs(is_land(grd[0], grd[1]) - 1.)
                 blob *= is_ocean
+            distribution = blob
 
-            return(float(parameters['weight']) * blob)
+        if parameters["taper"]:
+            if verbose:
+                print('Tapering')
+            dist = geographical_distances(grd,
+                                          parameters['taper_from_latlon']) / 1000.
+            one_sided_tukey_taper(dist, dist.max(), taper_fraction=parameters["taper_fraction"])
+
+        return(float(parameters['weight']) * distribution)
 
     def spectrum_from_parameters(self, freq, parameters):
 

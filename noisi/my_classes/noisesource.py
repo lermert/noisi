@@ -61,17 +61,20 @@ class NoiseSource(object):
     def get_spect(self, iloc, by_index=True):
 
         # return one spectrum in location with index iloc
-        return np.dot(self.distr_basis[iloc, :],
-                      self.spect_basis) + self.feature_mean
+        spec_i = np.dot(self.distr_basis[iloc, :],
+                        self.spect_basis) + self.feature_mean
+        spec_i [spec_i < 0] = 0.
+        return spec_i
     
-    def get_spect_all(self):
+    def get_spect_all(self, resolution):
         
         # return all spectra in array
         distr_basis_var = self.distr_basis
         spect_basis_var = self.spect_basis
         ntraces = self.src_loc[0].shape[0]
-        
-        return np.asarray([np.dot(distr_basis_var[i,:],spect_basis_var) for i in range(ntraces)])
+        spectra = np.asarray([np.dot(distr_basis_var[i,:],spect_basis_var) for i in range(0, ntraces, resolution)])
+        spectra[spectra < 0.0] = 0.0
+        return spectra
     
 
     def plot(self, **options):
@@ -88,10 +91,10 @@ class NoiseSource(object):
             plot_grid(self.src_loc[0], self.src_loc[1], m, **ops, outfile=outfile+"_{}.png".format(i))
 
 
-    def plot_at_freq(self, frequency, **options):
+    def plot_at_freq(self, frequency, resolution=1, **options):
 
         ixf = np.argmin((self.freq - frequency)**2)
         # get the amplitude at that frequency
-        all_spec = self.get_spect_all()
-        plot_grid(self.src_loc[0], self.src_loc[1], all_spec[:, ixf], **options)
+        all_spec = self.get_spect_all(resolution)
+        plot_grid(self.src_loc[0][:: resolution], self.src_loc[1][:: resolution], all_spec[:, ixf], **options)
         

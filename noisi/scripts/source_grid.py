@@ -46,7 +46,7 @@ def setup_sourcegrid(args, comm, size, rank):
     grid_filename = os.path.join(config['project_path'], 'sourcegrid.npy')
     sourcegrid = create_sourcegrid(config)
 
-    if config["only_ocean_sources"]:
+    if config["ocean_only_sources"]:
         land = is_land(sourcegrid[0], sourcegrid[1])
         print(land, land.shape)
         sourcegrid = sourcegrid[:, ~land]
@@ -57,7 +57,7 @@ def setup_sourcegrid(args, comm, size, rank):
                         outfile=os.path.join(config['project_path'],
                                              'sourcegrid.png'),
                         proj=ccrs.PlateCarree)
-    except NameError:
+    except:
         pass
 
     # write to .npy

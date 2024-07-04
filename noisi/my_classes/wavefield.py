@@ -43,7 +43,10 @@ class WaveField(object):
             raise IOError(msg)
 
         self.stats = dict(self.file['stats'].attrs)
-        self.fdomain = self.stats['fdomain']
+        try:
+            self.fdomain = self.stats['fdomain']
+        except KeyError:
+            self.fdomain = False
         self.sourcegrid = self.file['sourcegrid']
         
         try:
