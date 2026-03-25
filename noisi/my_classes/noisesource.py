@@ -66,7 +66,7 @@ class NoiseSource(object):
         spec_i [spec_i < 0] = 0.
         return spec_i
     
-    def get_spect_all(self, resolution):
+    def get_spect_all(self, resolution=1):
         
         # return all spectra in array
         distr_basis_var = self.distr_basis
