@@ -95,7 +95,6 @@ def len_deg_lat(lat):
 
 
 def get_spherical_surface_elements(lon, lat, r=6.378100e6):
-
     if len(lon) < 3:
         raise ValueError('Grid must have at least 3 points.')
     if len(lon) != len(lat):
@@ -104,7 +103,6 @@ def get_spherical_surface_elements(lon, lat, r=6.378100e6):
     # surfel
     surfel = np.zeros(lon.shape)
     colat = 90. - lat
-
     # find neighbours
     for i in range(len(lon)):
 
@@ -112,12 +110,16 @@ def get_spherical_surface_elements(lon, lat, r=6.378100e6):
         # the grid is set up here (in rings of constant colatitude)!
         # get the nearest longitude along the current colatitude
         current_colat = colat[i]
-        if current_colat in [0., 180.]:
+        if current_colat == 0 or current_colat == 180:
             # surface area will be 0 at poles.
             continue
 
         colat_idx = np.where(colat == current_colat)
-        lon_idx_1 = np.argsort(np.abs(lon[colat_idx] - lon[i]))[1]
+        lon_idx_1 = np.argsort(np.abs(lon[colat_idx] - lon[i]))
+        if len(lon_idx_1) < 3: # still too near the poles
+            print(f"Warning: Colatitude with less than three points on source grid found. Current colatitude: {current_colat}")
+            continue
+        lon_idx_1 = lon_idx_1[1]
         lon_idx_2 = np.argsort(np.abs(lon[colat_idx] - lon[i]))[2]
         closest_lon_1 = lon[colat_idx][lon_idx_1]
         closest_lon_2 = lon[colat_idx][lon_idx_2]

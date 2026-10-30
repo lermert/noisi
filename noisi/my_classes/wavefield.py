@@ -32,7 +32,8 @@ class WaveField(object):
     Methods to work on wavefields stored in an hdf5 file.
     """
 
-    def __init__(self, file, sourcegrid=None, w='r'):
+    def __init__(self, file, sourcegrid=None, w='r',
+        kind="noisi_default", comp="Z"):
 
         self.w = w
 
@@ -42,25 +43,43 @@ class WaveField(object):
             msg = 'Unable to open input file ' + file
             raise IOError(msg)
 
-        self.stats = dict(self.file['stats'].attrs)
-        try:
-            self.fdomain = self.stats['fdomain']
-        except KeyError:
-            self.fdomain = False
-        self.sourcegrid = self.file['sourcegrid']
-        
-        try:
-            self.data = self.file['data']
-        except KeyError:
-            self.data = self.file['data_z']
-        if self.fdomain:
-            self.freq = np.fft.rfftfreq(self.stats['npad'],
-                                        d=1. / self.stats['Fs'])
-        if 'npad' not in self.stats:
+        if kind == "noisi_default":
+            self.stats = dict(self.file['stats'].attrs)
+            try:
+                self.fdomain = self.stats['fdomain']
+            except KeyError:
+                self.fdomain = False
+            self.sourcegrid = self.file['sourcegrid']
+            
+            try:
+                self.data = self.file['data']
+            except KeyError:
+                self.data = self.file['data_z']
             if self.fdomain:
-                self.stats['npad'] = 2 * self.stats['nt'] - 2
-            else:
-                self.stats['npad'] = next_fast_len(2 * self.stats['nt'] - 1)
+                self.freq = np.fft.rfftfreq(self.stats['npad'],
+                                            d=1. / self.stats['Fs'])
+            if 'npad' not in self.stats:
+                if self.fdomain:
+                    self.stats['npad'] = 2 * self.stats['nt'] - 2
+                else:
+                    self.stats['npad'] = next_fast_len(2 * self.stats['nt'] - 1)
+        elif kind == "specfem3dglobe":
+            assert sourcegrid is not None, "With kind=specfem3dglobe, sourcegrid file is needed."
+            self.sourcegrid = np.load(sourcegrid)
+
+            self.data = self.file[f"MX{comp}"]
+            
+            self.fdomain = False  # specfem output always time series
+
+            self.stats = {}
+            # needed: nt, npad, ntraces, Fs, data quantity
+            self.stats["nt"] = self.data.shape[1]
+            self.stats["ntraces"] = self.data.shape[0]
+            difft = np.diff(self.file["time"][:])
+            print(difft, difft.min(), difft.max())
+            self.stats["Fs"] = 1. / difft[len(difft)//2]
+            self.stats["data_quantity"] = "DIS"  # specfem models displacement
+
 
     def get_green(self, ix=None, by_index=True):
 
